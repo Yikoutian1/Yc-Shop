@@ -9,7 +9,7 @@
       >
       </el-input>
       <el-button @click="handleQuery" class="el-button-search">搜索</el-button>
-      <span class="span-btn delBut non" @click="deleteHandle('批量')"
+      <span class="span-btn delBut non" @click="deleteHandle('批量',null)"
         >批量删除</span
       >
       <span class="span-btn blueBug non" @click="statusHandle('1')"
@@ -142,6 +142,8 @@ import { updateCategoryInfo } from "@/api/category";
 import { queryPage } from "@/api/category";
 import { searchCategory } from "@/api/category";
 import { changeCategoryStatusBatch} from "@/api/category";
+import { delBatchByIds } from "@/api/category";
+
 export default {
   data() {
     return {
@@ -156,7 +158,28 @@ export default {
     };
   },
   methods: {
-    //状态更改
+    // 批量删除和单删
+    deleteHandle(type,id){
+      let params = {}
+      let idArr = []
+      if("单删"==type){
+        idArr.push(id)
+      }else{
+        this.selectedItems.forEach(item=>{
+          idArr.push(item.id)
+        })
+      }
+      params.ids = idArr
+      delBatchByIds(params).then(res=>{
+        if(res.code === 200){
+          this.$message.success("删除成功");
+          this.query();
+        }else{
+          this.$message.error(res.msg);
+        }
+      })
+    },
+    // 启售:停售 状态更改
     statusHandle(row) {
       let params = {};
       if (typeof row === "string") {
@@ -164,7 +187,6 @@ export default {
           this.$message.error("批量操作，请先勾选操作分类！");
           return false;
         }
-        alert(1)
         let idsArr = []
         this.selectedItems.forEach(item=>{
           idsArr.push(item.id)
@@ -172,10 +194,11 @@ export default {
         params.ids = idsArr
         params.status = row;
       } else {
-        params.ids = row.id;
+        let idsArr = []
+        idsArr.push(row.id)
+        params.ids = idsArr;
         params.status = row.status ? "0" : "1";
       }
-      console.log(params.ids)
       this.$confirm("确认更改该套餐状态?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",

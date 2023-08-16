@@ -1,6 +1,7 @@
 package com.hang.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hang.dto.CategoryDelDto;
 import com.hang.dto.CategoryDto;
 import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
@@ -27,5 +28,7 @@ public interface CategoryService extends IService<Category> {
     ResponseResult queryPage(PageDto pageDto);
 
     ResponseResult changeCategoryStatusBatch(CategoryUpdateDto categoryUpdateDto);
+
+    ResponseResult delBatchByIds(CategoryDelDto categoryDelDto);
 }
 

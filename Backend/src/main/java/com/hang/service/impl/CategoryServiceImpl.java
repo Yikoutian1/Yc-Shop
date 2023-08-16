@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hang.dto.CategoryDelDto;
 import com.hang.dto.CategoryDto;
 import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
@@ -91,6 +92,19 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         List<Long> ids = categoryUpdateDto.getIds();
         System.out.println(categoryUpdateDto);
         baseMapper.updateStatusBatch(status,ids);
+        return ResponseResult.okResult();
+    }
+
+    @Override
+    public ResponseResult delBatchByIds(CategoryDelDto categoryDelDto) {
+        List<Long> ids = categoryDelDto.getIds();
+        int count = baseMapper.countIsToDel(ids);
+        // 如果分类和商品表有关联数据,则不能删除
+        if(count>0){
+            return ResponseResult.errorResult(201,"当前选择的分类下关联了商品，不能删除");
+        }
+        // 如果没有 则可以删除
+        baseMapper.deleteBatchIds(ids);
         return ResponseResult.okResult();
     }
 }

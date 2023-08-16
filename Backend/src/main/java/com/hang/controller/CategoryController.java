@@ -2,6 +2,7 @@ package com.hang.controller;
 
 
 
+import com.hang.dto.CategoryDelDto;
 import com.hang.dto.CategoryDto;
 import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
@@ -42,9 +43,11 @@ public class CategoryController{
     }
     @PostMapping("/changeCategoryStatusBatch")
     public ResponseResult changeCategoryStatusBatch(@RequestBody CategoryUpdateDto categoryUpdateDto){
-        System.out.println(categoryUpdateDto);
         return categoryService.changeCategoryStatusBatch(categoryUpdateDto);
     }
-
+    @DeleteMapping
+    public ResponseResult delBatchByIds(@RequestBody CategoryDelDto categoryDelDto){
+        return categoryService.delBatchByIds(categoryDelDto);
+    }
 }
 
