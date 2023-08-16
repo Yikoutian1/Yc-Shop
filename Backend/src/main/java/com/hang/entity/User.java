@@ -35,7 +35,8 @@ public class User  {
     //性别 0:女 1:男
     private Integer gender;
 
-
+    //0:未删除 1：已删除
+    private Integer delFlag;
 
 }
 
