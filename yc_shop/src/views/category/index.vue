@@ -59,6 +59,7 @@
         show-overflow-tooltip
       />
       <el-table-column label="操作" width="160" align="center">
+        <!-- 修改信息 -->
         <template slot-scope="scope">
           <el-button
             type="text"
@@ -68,6 +69,7 @@
           >
             修改
           </el-button>
+          <!-- 改状态 -->
           <el-button
             type="text"
             size="small"
@@ -76,6 +78,7 @@
           >
             {{ scope.row.status == "0" ? "启售" : "停售" }}
           </el-button>
+          <!-- 删除 -->
           <el-button
             type="text"
             size="small"
@@ -137,11 +140,9 @@
 import { getCategoryList } from "@/api/category";
 import { updateCategoryInfo } from "@/api/category";
 import { queryPage } from "@/api/category";
-import top from "./component/top";
+import { searchCategory } from "@/api/category";
+import { changeCategoryStatusBatch} from "@/api/category";
 export default {
-  components: {
-    top,
-  },
   data() {
     return {
       dialogVisible: false,
@@ -155,22 +156,71 @@ export default {
     };
   },
   methods: {
+    //状态更改
+    statusHandle(row) {
+      let params = {};
+      if (typeof row === "string") {
+        if (this.selectedItems.length == 0) {
+          this.$message.error("批量操作，请先勾选操作分类！");
+          return false;
+        }
+        alert(1)
+        let idsArr = []
+        this.selectedItems.forEach(item=>{
+          idsArr.push(item.id)
+        })
+        params.ids = idsArr
+        params.status = row;
+      } else {
+        params.ids = row.id;
+        params.status = row.status ? "0" : "1";
+      }
+      console.log(params.ids)
+      this.$confirm("确认更改该套餐状态?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        // 起售停售---批量起售停售接口
+        changeCategoryStatusBatch(params)
+          .then((res) => {
+            if (res.code === 200) {
+              this.$message.success("状态已经更改成功！");
+              this.query();
+            } else {
+              this.$message.error(res.msg || "操作失败");
+            }
+          })
+          .catch((err) => {
+            this.$message.error("请求出错了：" + err);
+          });
+      });
+    },
+
     // 搜索
-    handleQuery() {},
+    handleQuery() {
+      searchCategory(this.input).then((res) => {
+        if (res.code === 200) {
+          this.categoryList = [];
+          this.categoryList = res.data;
+          this.total = res.data.length;
+        }
+      });
+    },
 
     currentQuery(page) {
       // alert(page)
       // 切换页码 改变当前默认页码
-      if(page){
-        this.currentPageNum = page
+      if (page) {
+        this.currentPageNum = page;
       }
-      
+
       queryPage({
         pageNum: page,
         pageSize: this.currentPageSize,
       }).then((result) => {
         this.categoryList = result.data.row;
-        this.total = parseInt(result.data.total)
+        this.total = parseInt(result.data.total);
       });
     },
     sizeChangeQuery(pageSize) {
@@ -181,7 +231,7 @@ export default {
         pageSize: pageSize,
       }).then((result) => {
         this.categoryList = result.data.row;
-        this.total = parseInt(result.data.total)
+        this.total = parseInt(result.data.total);
       });
     },
     // 更新
@@ -224,7 +274,7 @@ export default {
       this.selectedItems = selection;
       if (this.selectedItems.length > 0) {
         this.selectedItems.forEach((item) => {
-          console.log("id:" + item.id + "  name:" + item.name);
+          // console.log("id:" + item.id + "  name:" + item.name);
         });
       }
     },

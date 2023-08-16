@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hang.dto.CategoryDto;
+import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
 import com.hang.entity.Category;
 import com.hang.mapper.CategoryMapper;
@@ -82,6 +83,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         long total = page.getTotal();
         CategoryPageVo pageVo = new CategoryPageVo(categoryVos,total);
         return ResponseResult.okResult(pageVo);
+    }
+
+    @Override
+    public ResponseResult changeCategoryStatusBatch(CategoryUpdateDto categoryUpdateDto) {
+        Integer status = categoryUpdateDto.getStatus();
+        List<Long> ids = categoryUpdateDto.getIds();
+        System.out.println(categoryUpdateDto);
+        baseMapper.updateStatusBatch(status,ids);
+        return ResponseResult.okResult();
     }
 }
 

@@ -3,11 +3,14 @@ package com.hang.controller;
 
 
 import com.hang.dto.CategoryDto;
+import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
 import com.hang.result.ResponseResult;
 import com.hang.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * (Category)表控制层
@@ -23,21 +26,25 @@ public class CategoryController{
     @GetMapping("/getCategoryList")
     public ResponseResult getCategoryList(){
         return categoryService.toVoList();
-        
+
     }
     @PostMapping("/updateCategoryInfo")
     public ResponseResult updateCategoryInfo(@RequestBody CategoryDto categoryDto){
         return categoryService.saveCategoryInfo(categoryDto);
     }
-    @GetMapping("/searchCategory/{name}")
-    public ResponseResult searchCategory(@PathVariable String name){
+    @GetMapping("/searchCategory")
+    public ResponseResult searchCategory(@RequestParam("name") String name){
         return categoryService.searchCategory(name);
     }
     @PostMapping("/queryPage")
     public ResponseResult queryPage(@RequestBody PageDto pageDto){
         return categoryService.queryPage(pageDto);
     }
-
+    @PostMapping("/changeCategoryStatusBatch")
+    public ResponseResult changeCategoryStatusBatch(@RequestBody CategoryUpdateDto categoryUpdateDto){
+        System.out.println(categoryUpdateDto);
+        return categoryService.changeCategoryStatusBatch(categoryUpdateDto);
+    }
 
 }
 
