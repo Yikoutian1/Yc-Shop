@@ -31,6 +31,7 @@ public class CategoryController{
     }
     @GetMapping("/searchCategory/{name}")
     public ResponseResult searchCategory(@PathVariable String name){
+
         return categoryService.searchCategory(name);
     }
     @PostMapping("/queryPage")
