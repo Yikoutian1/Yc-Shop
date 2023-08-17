@@ -1,6 +1,9 @@
 package com.hang.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hang.entity.Shop;
+import com.hang.mapper.ShopMapper;
+import com.hang.service.ShopService;
 import org.springframework.stereotype.Service;
 
 /**
