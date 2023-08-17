@@ -49,5 +49,9 @@ public class CategoryController{
     public ResponseResult delBatchByIds(@RequestBody CategoryDelDto categoryDelDto){
         return categoryService.delBatchByIds(categoryDelDto);
     }
+    @PostMapping("/addCategoryInfo")
+    public ResponseResult addCategoryInfo(@RequestBody CategoryDto categoryDto){
+        return categoryService.addCategory(categoryDto);
+    }
 }
 

@@ -9,7 +9,7 @@
       >
       </el-input>
       <el-button @click="handleQuery" class="el-button-search">搜索</el-button>
-      <span class="span-btn delBut non" @click="deleteHandle('批量',null)"
+      <span class="span-btn delBut non" @click="deleteHandle('批量', null)"
         >批量删除</span
       >
       <span class="span-btn blueBug non" @click="statusHandle('1')"
@@ -21,13 +21,7 @@
         @click="statusHandle('0')"
         >批量停售</span
       >
-      <el-button
-        class="el-button-primary"
-        type="primary"
-        @click="addCategory('add')"
-      >
-        + 新建套餐
-      </el-button>
+      <el-button type="primary" @click="addCategory()"> + 新建分类 </el-button>
     </div>
     <el-table
       @selection-change="handleSelectionChange"
@@ -110,27 +104,66 @@
       :before-close="handleClose"
     >
       <el-form ref="diaForm" :model="diaForm" class="dia-form">
-        <!-- <el-form-item label="分类名称">
-          <span>{{ diaForm.name }}</span>
-        </el-form-item>
-        <el-form-item label="排序">
-          <span>{{ diaForm.sort }}</span>
-        </el-form-item>
-        <el-form-item label="状态">
-          <span>{{ diaForm.status }}</span>
-        </el-form-item> -->
         <el-form-item label="分类名称">
-          <el-input v-model="diaForm.name"></el-input>
+          <el-input v-model.trim="diaForm.name"></el-input>
         </el-form-item>
         <el-form-item label="排序">
-          <el-input v-model="diaForm.sort"></el-input>
+          <el-input v-model.number="diaForm.sort"></el-input>
         </el-form-item>
-        <el-form-item label="状态">
+        <!-- <el-form-item label="状态">
           <el-input v-model="diaForm.status"></el-input>
-        </el-form-item>
+        </el-form-item> -->
+        <el-tooltip :content="'分类: ' + diaFormStatus" placement="top">
+          <el-switch
+            inactive-text="停售"
+            active-text="启售"
+            v-model="diaFormStatus"
+            active-color="#13ce66"
+            inactive-color="#ff4949"
+            active-value="启售"
+            inactive-value="停售"
+          >
+          </el-switch>
+        </el-tooltip>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button type="primary" @click="updateConfirm">确 定</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog
+      title="分类添加"
+      :visible.sync="dialogVisibleForAddCategory"
+      width="40%"
+      :before-close="handleAddCategoryClose"
+    >
+      <el-form ref="diaForm" :model="diaForm" class="dia-form">
+        <el-form-item label="分类名称">
+          <el-input v-model.trim="diaForm.name"></el-input>
+        </el-form-item>
+        <el-form-item label="排序(默认为0)">
+          <br />
+          <el-input-number
+            size="small"
+            v-model="diaFormSort"
+            :min="1"
+            :max="999"
+            :step="1"
+          ></el-input-number>
+        </el-form-item>
+        <el-switch
+          inactive-text="停售"
+          active-text="启售"
+          v-model="diaFormStatus"
+          active-color="#13ce66"
+          inactive-color="#ff4949"
+          active-value="启售"
+          inactive-value="停售"
+        >
+        </el-switch>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="concalAdd">取 消</el-button>
+        <el-button type="primary" @click="addConfirm">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -141,43 +174,55 @@ import { getCategoryList } from "@/api/category";
 import { updateCategoryInfo } from "@/api/category";
 import { queryPage } from "@/api/category";
 import { searchCategory } from "@/api/category";
-import { changeCategoryStatusBatch} from "@/api/category";
+import { changeCategoryStatusBatch } from "@/api/category";
 import { delBatchByIds } from "@/api/category";
-
+import { addCategoryInfo } from "@/api/category";
 export default {
   data() {
     return {
       dialogVisible: false,
+      dialogVisibleForAddCategory: false,
       categoryList: [],
       selectedItems: [],
       diaForm: {},
+      diaFormSort: 10,
+      diaFormStatus: "启售", // 默认选择框value
       input: "",
       total: 0,
       currentPageNum: 1, // 默认页码1
       currentPageSize: 10, // 默认一页10个
+      MAX: 999,
+      MIN: 1,
     };
   },
   methods: {
+    addCategory() {
+      this.diaForm = {};
+      this.dialogVisibleForAddCategory = true;
+    },
+    handleAddCategoryClose() {
+      this.dialogVisibleForAddCategory = false;
+    },
     // 批量删除和单删
-    deleteHandle(type,id){
-      let params = {}
-      let idArr = []
-      if("单删"==type){
-        idArr.push(id)
-      }else{
-        this.selectedItems.forEach(item=>{
-          idArr.push(item.id)
-        })
+    deleteHandle(type, id) {
+      let params = {};
+      let idArr = [];
+      if ("单删" == type) {
+        idArr.push(id);
+      } else {
+        this.selectedItems.forEach((item) => {
+          idArr.push(item.id);
+        });
       }
-      params.ids = idArr
-      delBatchByIds(params).then(res=>{
-        if(res.code === 200){
+      params.ids = idArr;
+      delBatchByIds(params).then((res) => {
+        if (res.code === 200) {
           this.$message.success("删除成功");
           this.query();
-        }else{
+        } else {
           this.$message.error(res.msg);
         }
-      })
+      });
     },
     // 启售:停售 状态更改
     statusHandle(row) {
@@ -187,15 +232,15 @@ export default {
           this.$message.error("批量操作，请先勾选操作分类！");
           return false;
         }
-        let idsArr = []
-        this.selectedItems.forEach(item=>{
-          idsArr.push(item.id)
-        })
-        params.ids = idsArr
+        let idsArr = [];
+        this.selectedItems.forEach((item) => {
+          idsArr.push(item.id);
+        });
+        params.ids = idsArr;
         params.status = row;
       } else {
-        let idsArr = []
-        idsArr.push(row.id)
+        let idsArr = [];
+        idsArr.push(row.id);
         params.ids = idsArr;
         params.status = row.status ? "0" : "1";
       }
@@ -257,26 +302,93 @@ export default {
         this.total = parseInt(result.data.total);
       });
     },
+    // 新增分类确认
+    addConfirm() {
+      this.dialogVisible = false;
+      if (this.diaFormStatus == "启售") {
+        this.diaForm.status = 1;
+      } else {
+        this.diaForm.status = 0;
+      }
+      this.diaForm.sort = this.diaFormSort;
+      // console.log(this.diaForm.name);
+      if (this.diaForm.name == undefined || this.diaForm.name == "") {
+        this.$prompt("请输入分类名称", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          inputPattern: /^.+$/,
+          inputErrorMessage: "名字不能为空",
+        })
+          .then(({ value }) => {
+            this.$message({
+              type: "success",
+              message: "输入的分类名称为: " + value,
+            });
+            this.diaForm.name = value;
+            addCategoryInfo(this.diaForm).then((res) => {
+              console.log(this.diaForm);
+              if (res.code === 200) {
+                this.$message({
+                  message: "新增成功",
+                  type: "success",
+                });
+                this.query();
+              } else {
+                this.$message.error("新增失败");
+              }
+            });
+          })
+          .catch(() => {
+            this.$message({
+              type: "info",
+              message: "取消输入",
+            });
+          });
+      } else {
+        addCategoryInfo(this.diaForm).then((res) => {
+          console.log(this.diaForm);
+          if (res.code === 200) {
+            this.$message({
+              message: "新增成功",
+              type: "success",
+            });
+            this.query();
+          } else {
+            this.$message.error("新增失败");
+          }
+        });
+      }
+    },
     // 更新
     updateConfirm() {
       this.dialogVisible = false;
-      updateCategoryInfo(this.diaForm).then((res) => {
-        if (res.code === 200) {
-          this.$message({
-            message: "修改成功",
-            type: "success",
-          });
-        } else {
-          this.$message.error("修改失败");
-        }
-      });
+      // console.log(this.diaFormStatus);
+      if (this.diaFormStatus == "启售") {
+        this.diaForm.status = 1;
+      } else {
+        this.diaForm.status = 0;
+      }
+      if (this.diaForm)
+        // console.log(this.diaForm);
+        updateCategoryInfo(this.diaForm).then((res) => {
+          if (res.code === 200) {
+            this.$message({
+              message: "修改成功",
+              type: "success",
+            });
+          } else {
+            this.$message.error("修改失败");
+          }
+        });
       this.query();
     },
     handleClose() {
       this.dialogVisible = false;
     },
+    // TODO
     updateInfo(row) {
       this.diaForm = {};
+      // row.status = row.status == 1 ? "启售" : "停售";
       this.dialogVisible = true;
       // 修改的对象
       this.diaForm = { ...row };
@@ -300,6 +412,9 @@ export default {
           // console.log("id:" + item.id + "  name:" + item.name);
         });
       }
+    },
+    concalAdd() {
+      this.dialogVisibleForAddCategory = false;
     },
   },
   created() {

@@ -30,5 +30,7 @@ public interface CategoryService extends IService<Category> {
     ResponseResult changeCategoryStatusBatch(CategoryUpdateDto categoryUpdateDto);
 
     ResponseResult delBatchByIds(CategoryDelDto categoryDelDto);
+
+    ResponseResult addCategory(CategoryDto categoryDto);
 }
 

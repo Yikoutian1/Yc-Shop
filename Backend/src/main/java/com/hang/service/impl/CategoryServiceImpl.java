@@ -34,12 +34,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByAsc(Category::getSort);
         // 默认第一页 一页10个数据
-        Page<Category> page = new Page<>(1,10);
-        page(page,queryWrapper);
+        Page<Category> page = new Page<>(1, 10);
+        page(page, queryWrapper);
         List<Category> records = page.getRecords();
         long total = page.getTotal();
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(records, CategoryVo.class);
-        CategoryPageVo categoryPageVo = new CategoryPageVo(categoryVos,total);
+        CategoryPageVo categoryPageVo = new CategoryPageVo(categoryVos, total);
         return ResponseResult.okResult(categoryPageVo);
     }
 
@@ -53,20 +53,21 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public ResponseResult saveCategoryInfo(CategoryDto categoryDto) {
         Category category = BeanCopyUtils.copyBean(categoryDto, Category.class);
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Category::getId,category.getId());
-        update(category,queryWrapper);
+        queryWrapper.eq(Category::getId, category.getId());
+        update(category, queryWrapper);
         return ResponseResult.okResult();
     }
 
     /**
      * 根据名字搜索
+     *
      * @param name
      * @return
      */
     @Override
     public ResponseResult searchCategory(String name) {
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(Category::getName,name);
+        queryWrapper.like(Category::getName, name);
         List<Category> list = list(queryWrapper);
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(list, CategoryVo.class);
         return ResponseResult.okResult(categoryVos);
@@ -74,15 +75,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Override
     public ResponseResult queryPage(PageDto pageDto) {
-        Page<Category> page = new Page<>(pageDto.getPageNum(),pageDto.getPageSize());
+        Page<Category> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         // 排序
         queryWrapper.orderByAsc(Category::getSort);
-        page(page,queryWrapper);
+        page(page, queryWrapper);
         List<Category> records = page.getRecords();
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(records, CategoryVo.class);
         long total = page.getTotal();
-        CategoryPageVo pageVo = new CategoryPageVo(categoryVos,total);
+        CategoryPageVo pageVo = new CategoryPageVo(categoryVos, total);
         return ResponseResult.okResult(pageVo);
     }
 
@@ -91,7 +92,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         Integer status = categoryUpdateDto.getStatus();
         List<Long> ids = categoryUpdateDto.getIds();
         System.out.println(categoryUpdateDto);
-        baseMapper.updateStatusBatch(status,ids);
+        baseMapper.updateStatusBatch(status, ids);
         return ResponseResult.okResult();
     }
 
@@ -100,12 +101,20 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         List<Long> ids = categoryDelDto.getIds();
         int count = baseMapper.countIsToDel(ids);
         // 如果分类和商品表有关联数据,则不能删除
-        if(count>0){
-            return ResponseResult.errorResult(201,"当前选择的分类下关联了商品，不能删除");
+        if (count > 0) {
+            return ResponseResult.errorResult(201, "当前选择的分类下关联了商品，不能删除");
         }
         // 如果没有 则可以删除
         baseMapper.deleteBatchIds(ids);
         return ResponseResult.okResult();
+    }
+
+    @Override
+    public ResponseResult addCategory(CategoryDto categoryDto) {
+        Category category = BeanCopyUtils.copyBean(categoryDto, Category.class);
+        boolean flag = save(category);
+        return flag ? ResponseResult.okResult() : ResponseResult.errorResult(201,"新增失败");
+
     }
 }
 
