@@ -1,7 +1,9 @@
 package com.hang.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hang.dto.ShopInfoVo;
 import com.hang.entity.Shop;
+import com.hang.result.ResponseResult;
 
 
 /**
@@ -12,5 +14,6 @@ import com.hang.entity.Shop;
  */
 public interface ShopService extends IService<Shop> {
 
+    ResponseResult addShopInfo(ShopInfoVo shopInfoVo);
 }
 

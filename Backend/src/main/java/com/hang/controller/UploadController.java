@@ -23,8 +23,9 @@ public class UploadController {
     @Autowired
     private UploadService uploadService;
 
+
     @PostMapping("/upload")
-    public ResponseResult uploadImg(@RequestParam("img") MultipartFile[] multipartFile) {
+    public ResponseResult uploadImg(@RequestParam("file") MultipartFile multipartFile) {
         try {
             return uploadService.uploadImg(multipartFile);
         } catch (Exception e) {
@@ -32,4 +33,17 @@ public class UploadController {
             throw new RuntimeException("文件上传上传失败");
         }
     }
+    /**
+     * 上传多组照片
+     * @param multipartFile
+     * @return
+     */
+//    public ResponseResult uploadImg(MultipartFile[] multipartFile) {
+//        try {
+//            return uploadService.uploadImg(multipartFile);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            throw new RuntimeException("文件上传上传失败");
+//        }
+//    }
 }

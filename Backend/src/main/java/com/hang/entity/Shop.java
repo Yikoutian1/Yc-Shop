@@ -26,7 +26,7 @@ public class Shop  {
     //商品名
     private String name;
     //商品价格
-    private Object price;
+    private Double price;
     //商品照片
     private String image;
     //商品描述

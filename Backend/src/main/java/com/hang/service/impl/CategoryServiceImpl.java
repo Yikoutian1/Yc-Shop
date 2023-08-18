@@ -116,5 +116,14 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return flag ? ResponseResult.okResult() : ResponseResult.errorResult(201,"新增失败");
 
     }
+
+    @Override
+    public ResponseResult listWithTotal() {
+        List<Category> list = list(null);
+        Integer total = list.size();
+        List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(list, CategoryVo.class);
+        CategoryPageVo pageVo = new CategoryPageVo(categoryVos,total.longValue());
+        return ResponseResult.okResult(pageVo);
+    }
 }
 

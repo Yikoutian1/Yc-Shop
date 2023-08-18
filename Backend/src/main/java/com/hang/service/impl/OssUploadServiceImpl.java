@@ -52,13 +52,28 @@ public class OssUploadServiceImpl implements UploadService {
         return ResponseResult.okResult(urls);
     }
 
+    @Override
+    public ResponseResult uploadImg(MultipartFile img) {
+
+        // 获取文件名进行判断
+        String originalFilename = img.getOriginalFilename();
+        // 对原始文件名进行判断
+        if (!originalFilename.endsWith(".png") && !originalFilename.endsWith(".jpg")) {
+            throw new SystemException(AppHttpCodeEnum.FILENAME_ERROR);
+        }
+        // 判断通过 上传文件到OSS
+        String filePath = PathUtils.generateFilePath(originalFilename);
+        String url = UploadOss(img, filePath); // 2023/8/7/uuid.png
+
+        return ResponseResult.okResult(url);
+    }
 
     //@Value("${oss.accessKey}")
     private String accessKey = "cuwMLlcQi3v83Q9WmNeqn2FSq2TCvE8C5ok7McfH";
     //@Value("${oss.secretKey}")
     private String secretKey = "V-LBcGJAuptis_hXNsWLuuJg-wioAEBsN9zFiMKT";
     //@Value("${oss.bucket}")
-    private String bucket = "calyee-blog";
+    private String bucket = "yc-shop";
 
     private static final String _web = "http://rz0io97i6.hn-bkt.clouddn.com/";
 

@@ -30,7 +30,7 @@ public class CategoryController{
     }
     @GetMapping("/getCategoryAllList")
     public ResponseResult getCategoryAllList(){
-        return ResponseResult.okResult(categoryService.list(null));
+        return categoryService.listWithTotal();
     }
     @PostMapping("/updateCategoryInfo")
     public ResponseResult updateCategoryInfo(@RequestBody CategoryDto categoryDto){
