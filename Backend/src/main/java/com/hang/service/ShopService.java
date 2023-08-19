@@ -15,5 +15,7 @@ import com.hang.result.ResponseResult;
 public interface ShopService extends IService<Shop> {
 
     ResponseResult addShopInfo(ShopInfoVo shopInfoVo);
+
+    ResponseResult getShopList();
 }
 

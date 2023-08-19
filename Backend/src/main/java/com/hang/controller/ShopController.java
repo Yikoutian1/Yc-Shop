@@ -25,8 +25,11 @@ public class ShopController{
 
     @PostMapping("/addShopInfo")
     public ResponseResult addShopInfo(@RequestBody ShopInfoVo shopInfoVo){
-
         return shopService.addShopInfo(shopInfoVo);
+    }
+    @GetMapping("/getShopList")
+    public ResponseResult getShopList(){
+        return shopService.getShopList();
     }
 }
 

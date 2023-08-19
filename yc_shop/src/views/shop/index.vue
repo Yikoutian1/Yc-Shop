@@ -23,6 +23,28 @@
       >
       <el-button type="primary" @click="addShop()"> + 新增商品 </el-button>
     </div>
+    <div>
+      <el-table :data="tableData">
+        <el-table-column label="图片">
+          <template slot-scope="scope">
+            <el-popover placement="right" trigger="hover">
+              <img
+                :src="scope.row.picture"
+                style="max-width: 500px; max-height: 500px"
+              />
+              <img
+                slot="reference"
+                :src="scope.row.thumbnail"
+                style="width: 50px; height: 50px; vertical-align: middle"
+              />
+            </el-popover>
+          </template>
+        </el-table-column>
+        <el-table-column label="不是图片">
+          啊哈哈哈
+        </el-table-column>
+      </el-table>
+    </div>
     <el-dialog
       title="商品添加"
       :visible.sync="dialogVisibleForAddShop"
@@ -67,6 +89,7 @@
           :rows="2"
           placeholder="请输入内容"
           v-model="textarea"
+          style="margin-top: 10px"
         >
         </el-input>
       </el-form>
@@ -81,7 +104,7 @@
         :limit="3"
         :on-exceed="handleExceed"
         :file-list="fileList"
-        :on-success="handleUploadSuccess"
+        style="margin-top: 10px"
       >
         <el-button size="small" type="primary">点击上传</el-button>
         <div slot="tip" class="el-upload__tip">
@@ -193,18 +216,6 @@ export default {
       });
       // console.log(res)
       return res;
-    },
-    // 上传成功!!
-    handleUploadSuccess(response, file, fileList) {
-      // 在上传成功后执行你的操作
-      // console.log("上传成功", response);
-      let url = response.data;
-      // http://rz0io97i6.hn-bkt.clouddn.com/2023/08/18/07c1d68f42b942bb96cd9ddd734adca5.png
-      const pre = "http://rz0io97i6.hn-bkt.clouddn.com/";
-      let back = url.substring(pre.length);
-      // this.fileList.push(back)
-      // console.log(this.fileList)
-      // 执行其他操作
     },
     handlePreview(file) {
       // 预览文件的处理函数

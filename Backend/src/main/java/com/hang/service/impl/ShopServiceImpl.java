@@ -8,6 +8,7 @@ import com.hang.result.ResponseResult;
 import com.hang.service.ShopService;
 import com.hang.service.UploadService;
 import com.hang.utils.BeanCopyUtils;
+import com.hang.vo.ShopVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -53,5 +55,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             return ResponseResult.errorResult(201, "新增失败");
         }
     }
+
+    @Override
+    public ResponseResult getShopList() {
+        List<Shop> list = list();
+        List<ShopVo> shopVos = BeanCopyUtils.copyBeanList(list, ShopVo.class);
+        return ResponseResult.okResult(shopVos);
+    }
+
 }
 
