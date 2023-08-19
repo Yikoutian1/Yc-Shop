@@ -107,7 +107,7 @@ export default {
   data() {
     return {
       input: "", // 搜索的值
-      dialogVisibleForAddShop: true,
+      dialogVisibleForAddShop: false,
       fileList: [], // 照片
       options: [], // 选择的分类
       value: "", // 选择的数据
@@ -117,6 +117,8 @@ export default {
       previewVisible: false,
       previewPath: "", // url
       diaFormStatus: "启售", // 默认起售
+      basePhotoUrl: "http://rz0io97i6.hn-bkt.clouddn.com/",
+      resList: [], // 返回的url集合
       rules: {
         name: [{ required: true, message: "请输入商品名字", trigger: "blur" }],
         categoryId: [
@@ -139,30 +141,37 @@ export default {
 
   methods: {
     addConfirm() {
-      let rawList = [];
       this.$refs.diaForm.validate((valid) => {
         if (valid) {
-          rawList = this.fileList;
-          console.log(rawList);
+          this.resList = this.handleFileList(this.fileList);
           this.diaFormStatus = "启售" == this.diaFormStatus ? 1 : 0;
           let list = {
             name: this.diaForm.name,
             price: this.diaForm.price,
             categoryId: this.diaForm.categoryId,
             describle: this.textarea,
-            images: this.fileList,
+            images: this.resList,
             status: this.diaFormStatus,
           };
           // 执行添加操作
           // 调用上传接口
+          // console.log(list);
           shopInfoAdd(list)
-            .then((response) => {
-              console.log("上传成功:", response);
-              // 在这里可以根据服务器返回的数据进行一些操作
+            .then(() => {
+              this.$message({
+                showClose: true,
+                message: "上传成功",
+                type: "success",
+              });
+              dialogVisibleForAddShop = false;
             })
             .catch((error) => {
-              console.error("上传失败:", error);
-              // 处理上传失败的情况
+              this.$message({
+                showClose: true,
+                message: "上传失败",
+                type: "error",
+              });
+              dialogVisibleForAddShop = false;
             });
         } else {
           // 验证失败
@@ -174,15 +183,27 @@ export default {
       this.fileList = fileList;
       // console.log(this.fileList)
     },
+    handleFileList(fileList) {
+      let res = [];
+      fileList.forEach((item) => {
+        // console.log(item)
+        let url = item.response.data;
+        let back = url.substring(this.basePhotoUrl.length);
+        res.push(back);
+      });
+      // console.log(res)
+      return res;
+    },
     // 上传成功!!
     handleUploadSuccess(response, file, fileList) {
       // 在上传成功后执行你的操作
-      console.log("上传成功", response);
-      let url = response.data
+      // console.log("上传成功", response);
+      let url = response.data;
       // http://rz0io97i6.hn-bkt.clouddn.com/2023/08/18/07c1d68f42b942bb96cd9ddd734adca5.png
-      const pre = "http://rz0io97i6.hn-bkt.clouddn.com/"
+      const pre = "http://rz0io97i6.hn-bkt.clouddn.com/";
       let back = url.substring(pre.length);
-      console.log(back)
+      // this.fileList.push(back)
+      // console.log(this.fileList)
       // 执行其他操作
     },
     handlePreview(file) {

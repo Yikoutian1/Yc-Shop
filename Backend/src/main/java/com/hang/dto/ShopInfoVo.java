@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @ClassName ShopInfoVo
@@ -21,14 +22,14 @@ import java.util.Date;
 public class ShopInfoVo {
     //商品名
     private String name;
-    //商品价格
+    //商品价格w
     private Double price;
     //商品描述
     private String describle;
     //商品状态 1:默认起售 0:未起售
     private Integer status;
 
-    private MultipartFile[] images;
+    private List<String> images;
 
     private Long categoryId;
 

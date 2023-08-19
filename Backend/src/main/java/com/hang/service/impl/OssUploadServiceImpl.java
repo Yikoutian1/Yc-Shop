@@ -75,7 +75,7 @@ public class OssUploadServiceImpl implements UploadService {
     //@Value("${oss.bucket}")
     private String bucket = "yc-shop";
 
-    private static final String _web = "http://rz0io97i6.hn-bkt.clouddn.com/";
+    private static final String _web = "http://rzl9bicnx.hn-bkt.clouddn.com/";
 
     private String UploadOss(MultipartFile imgFile, String filePath) {
 

@@ -15,6 +15,8 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.stream.Collectors;
+
 /**
  * (Shop)表服务实现类
  *
@@ -31,10 +33,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     private TransactionDefinition transactionDefinition;
     @Override
     public ResponseResult addShopInfo(ShopInfoVo shopInfoVo) {
-        MultipartFile[] images = shopInfoVo.getImages();
-        uploadService.uploadImg(images);
         TransactionStatus transactionStatus = dataSourceTransactionManager.getTransaction(transactionDefinition);
         Shop shop = BeanCopyUtils.copyBean(shopInfoVo, Shop.class);
+        String images = shopInfoVo.getImages()
+                .stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));;
+                shop.setImage(images);
         try{
             // 商品表
             baseMapper.insert(shop);
