@@ -20,4 +20,11 @@
             #{id}
         </foreach>
     </select>
+    <select id="getCategoryNameByShopId" resultType="java.lang.String">
+        select name
+        from category
+        left join shop_category sc on category.id = sc.category_id
+        where 1=1
+            and sc.shop_id = #{shopId}
+    </select>
 </mapper>

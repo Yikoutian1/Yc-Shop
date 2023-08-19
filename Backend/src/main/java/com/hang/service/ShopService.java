@@ -1,6 +1,7 @@
 package com.hang.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hang.dto.PageDto;
 import com.hang.dto.ShopInfoVo;
 import com.hang.entity.Shop;
 import com.hang.result.ResponseResult;
@@ -17,5 +18,13 @@ public interface ShopService extends IService<Shop> {
     ResponseResult addShopInfo(ShopInfoVo shopInfoVo);
 
     ResponseResult getShopList();
+
+    ResponseResult getShopListByPageInfo(PageDto pageDto);
+
+    ResponseResult queryShopById(Long id);
+
+    ResponseResult searchByName(String name);
+
+    ResponseResult updateShopById(ShopInfoVo shopInfoVo);
 }
 

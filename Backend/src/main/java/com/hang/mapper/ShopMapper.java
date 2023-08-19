@@ -17,5 +17,6 @@ import org.apache.ibatis.annotations.Param;
 public interface ShopMapper extends BaseMapper<Shop> {
 
     void insertIntoShopCategory(@Param("vo") ShopInfoVo shopInfoVo,@Param("shop_id") Long id);
+    String getImgById(@Param("id")Long id);
 }
 

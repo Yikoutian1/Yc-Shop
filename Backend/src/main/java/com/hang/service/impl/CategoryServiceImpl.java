@@ -1,7 +1,6 @@
 package com.hang.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hang.dto.CategoryDelDto;
@@ -9,16 +8,18 @@ import com.hang.dto.CategoryDto;
 import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
 import com.hang.entity.Category;
+import com.hang.entity.Shop;
 import com.hang.mapper.CategoryMapper;
 import com.hang.result.ResponseResult;
 import com.hang.service.CategoryService;
 import com.hang.utils.BeanCopyUtils;
 import com.hang.vo.CategoryPageVo;
 import com.hang.vo.CategoryVo;
+import com.hang.vo.ShopExistTableVo;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * (Category)表服务实现类
@@ -113,7 +114,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public ResponseResult addCategory(CategoryDto categoryDto) {
         Category category = BeanCopyUtils.copyBean(categoryDto, Category.class);
         boolean flag = save(category);
-        return flag ? ResponseResult.okResult() : ResponseResult.errorResult(201,"新增失败");
+        return flag ? ResponseResult.okResult() : ResponseResult.errorResult(201, "新增失败");
 
     }
 
@@ -122,8 +123,37 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         List<Category> list = list(null);
         Integer total = list.size();
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(list, CategoryVo.class);
-        CategoryPageVo pageVo = new CategoryPageVo(categoryVos,total.longValue());
+        CategoryPageVo pageVo = new CategoryPageVo(categoryVos, total.longValue());
         return ResponseResult.okResult(pageVo);
+    }
+
+    /**
+     * 根据shop的id 查询出每一个shop的分类
+     *
+     * @param shop
+     * @return
+     */
+    @Override
+    public List<ShopExistTableVo> getCategoryNameList(List<Shop> shop) {
+        List<ShopExistTableVo> shopExistTableVos = BeanCopyUtils.copyBeanList(shop, ShopExistTableVo.class);
+        shopExistTableVos.stream().map(item -> {
+            item.setCategoryName(baseMapper.getCategoryNameByShopId(item.getId()));
+            return item;
+        }).collect(Collectors.toList());
+        return shopExistTableVos;
+    }
+
+    /**
+     * 根据名字获取id
+     * @param name
+     * @return
+     */
+    @Override
+    public ResponseResult byNameFindCategoryId(String name) {
+        LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Category::getName,name);
+        Category one = getOne(queryWrapper);
+        return ResponseResult.okResult(one.getId());
     }
 }
 

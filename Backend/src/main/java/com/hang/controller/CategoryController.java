@@ -56,5 +56,9 @@ public class CategoryController{
     public ResponseResult addCategoryInfo(@RequestBody CategoryDto categoryDto){
         return categoryService.addCategory(categoryDto);
     }
+    @GetMapping("/byNameFindCategoryId")
+    public ResponseResult byNameFindCategoryId(@RequestParam("name") String name){
+        return categoryService.byNameFindCategoryId(name);
+    }
 }
 

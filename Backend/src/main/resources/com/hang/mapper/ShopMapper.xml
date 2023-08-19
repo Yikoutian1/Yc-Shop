@@ -6,6 +6,12 @@
 
     <insert id="insertIntoShopCategory">
         insert into yc_shop.shop_category(shop_id, category_id)
-        value (#{shop_id},#{vo.categoryId})
+            value (#{shop_id}, #{vo.categoryId})
     </insert>
+
+    <select id="getImgById" resultType="java.lang.String">
+        select image
+        from yc_shop.shop
+        where id = #{id}
+    </select>
 </mapper>

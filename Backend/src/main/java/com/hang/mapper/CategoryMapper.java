@@ -20,5 +20,8 @@ public interface CategoryMapper extends BaseMapper<Category> {
     void updateStatusBatch(@Param("status") Integer status,@Param("ids") List<Long> ids);
 
     int countIsToDel(@Param("ids") List<Long> ids);
+
+    String getCategoryNameByShopId(@Param("shopId") Long id);
+
 }
 

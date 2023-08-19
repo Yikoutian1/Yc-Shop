@@ -6,7 +6,9 @@ import com.hang.dto.CategoryDto;
 import com.hang.dto.CategoryUpdateDto;
 import com.hang.dto.PageDto;
 import com.hang.entity.Category;
+import com.hang.entity.Shop;
 import com.hang.result.ResponseResult;
+import com.hang.vo.ShopExistTableVo;
 
 import java.util.List;
 
@@ -34,5 +36,9 @@ public interface CategoryService extends IService<Category> {
     ResponseResult addCategory(CategoryDto categoryDto);
 
     ResponseResult listWithTotal();
+
+    List<ShopExistTableVo> getCategoryNameList(List<Shop> records);
+
+    ResponseResult byNameFindCategoryId(String name);
 }
 

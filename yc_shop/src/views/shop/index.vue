@@ -9,6 +9,7 @@
       >
       </el-input>
       <el-button @click="handleQuery" class="el-button-search">搜索</el-button>
+
       <span class="span-btn delBut non" @click="deleteHandle('批量', null)"
         >批量删除</span
       >
@@ -21,32 +22,58 @@
         @click="statusHandle('0')"
         >批量停售</span
       >
-      <el-button type="primary" @click="addShop()"> + 新增商品 </el-button>
+      <el-button type="primary" @click="addShop"> + 新增商品 </el-button>
     </div>
     <div>
-      <el-table :data="tableData">
-        <el-table-column label="图片">
+      <el-table :data="shopData">
+        <el-table-column
+          type="selection"
+          property="id"
+          label="编号"
+          width="60"
+        />
+        <el-table-column property="id" label="编号" width="60" />
+        <el-table-column label="图片" width="100px;">
           <template slot-scope="scope">
             <el-popover placement="right" trigger="hover">
               <img
-                :src="scope.row.picture"
-                style="max-width: 500px; max-height: 500px"
+                :src="scope.row.image"
+                style="max-width: 400px; max-height: 400px"
               />
               <img
                 slot="reference"
-                :src="scope.row.thumbnail"
+                :src="scope.row.image"
                 style="width: 50px; height: 50px; vertical-align: middle"
               />
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column label="不是图片">
-          啊哈哈哈
+        <el-table-column property="name" label="商品名" width="200" />
+        <el-table-column property="category" label="分类" width="120" />
+        <el-table-column property="price" label="价格" width="100" />
+        <el-table-column property="sales" label="销量" width="120" />
+        <el-table-column property="status" label="状态" width="80" />
+        <el-table-column property="describle" label="描述" width="300" />
+        <el-table-column property="createTime" label="创建时间" width="150" />
+        <el-table-column property="updateTime" label="更新时间" width="150" />
+        <el-table-column label="操作" width="160" align="center">
+          <!-- 修改信息 -->
+          <template slot-scope="scope">
+            <el-button
+              type="text"
+              size="small"
+              class="blueBug"
+              style="font-size: small"
+              @click="updateInfo(scope.row)"
+            >
+              修改
+            </el-button>
+          </template>
         </el-table-column>
       </el-table>
     </div>
     <el-dialog
-      title="商品添加"
+      :title="title"
       :visible.sync="dialogVisibleForAddShop"
       width="500px"
       :before-close="handleAddShopClose"
@@ -111,9 +138,34 @@
           只能上传jpg/png文件，且不超过500kb
         </div>
       </el-upload>
+      <br />
+      <div v-if="this.title == '修改信息'">
+        <div
+          v-for="(item, index) in diaFormPhotoList"
+          :key="index"
+          style="border: 1px #bacaff solid; display: flex"
+        >
+          <div class="img">
+            <img :src="item" style="max-width: 80px; max-height: 80px" />
+          </div>
+          <div style="margin-top: 20px">
+            {{ item }}
+          </div>
+          <div style="margin-right: 6px; margin-top: 3px; cursor: pointer">
+            <i @click="removePhoto(item)" class="el-icon-close"></i>
+          </div>
+        </div>
+      </div>
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleAddShopClose">取 消</el-button>
-        <el-button type="primary" @click="addConfirm()">确 定</el-button>
+
+        <el-button
+          v-if="this.title == '新增商品'"
+          type="primary"
+          @click="addConfirm"
+          >确 定</el-button
+        >
+        <el-button v-else type="primary" @click="saveShopH">确 定</el-button>
       </span>
     </el-dialog>
     <!-- 图片预览窗口 -->
@@ -126,9 +178,15 @@
 <script>
 import { getCategoryAllList } from "@/api/category";
 import { shopInfoAdd } from "@/api/shop";
+import { getShopListByPageInfo } from "@/api/shop";
+import { searchByName } from "@/api/shop";
+import { getImgById } from "@/api/shop";
+import { saveShop } from "@/api/shop";
+import { byNameFindCategoryId } from "@/api/category";
 export default {
   data() {
     return {
+      title: "商品添加", // 默认为商品添加
       input: "", // 搜索的值
       dialogVisibleForAddShop: false,
       fileList: [], // 照片
@@ -140,8 +198,12 @@ export default {
       previewVisible: false,
       previewPath: "", // url
       diaFormStatus: "启售", // 默认起售
-      basePhotoUrl: "http://rz0io97i6.hn-bkt.clouddn.com/",
+      basePhotoUrl: "http://rzl9bicnx.hn-bkt.clouddn.com/",
       resList: [], // 返回的url集合
+      shopData: [], // 商品集合
+      diaFormPhotoList: [], // 弹窗照片集合
+      searchCateId: 0, // 根据名字查询到的分类id
+      updateShopId: 0, // 全局更新商品id
       rules: {
         name: [{ required: true, message: "请输入商品名字", trigger: "blur" }],
         categoryId: [
@@ -166,7 +228,10 @@ export default {
     addConfirm() {
       this.$refs.diaForm.validate((valid) => {
         if (valid) {
-          this.resList = this.handleFileList(this.fileList);
+          this.resList = this.handleFileList(
+            this.fileList,
+            this.diaFormPhotoList
+          );
           this.diaFormStatus = "启售" == this.diaFormStatus ? 1 : 0;
           let list = {
             name: this.diaForm.name,
@@ -181,41 +246,144 @@ export default {
           // console.log(list);
           shopInfoAdd(list)
             .then(() => {
+              this.dialogVisibleForAddShop = false;
+              this.queryShopPageList()
               this.$message({
                 showClose: true,
                 message: "上传成功",
                 type: "success",
               });
-              dialogVisibleForAddShop = false;
             })
             .catch((error) => {
+              this.dialogVisibleForAddShop = false;
               this.$message({
                 showClose: true,
                 message: "上传失败",
                 type: "error",
               });
-              dialogVisibleForAddShop = false;
             });
         } else {
           // 验证失败
           return false;
         }
       });
+    }, // 删除照片
+    removePhoto(item) {
+      this.diaFormPhotoList = this.diaFormPhotoList.filter((i) => i != item);
+      // console.log(this.diaFormPhotoList);
     },
     handleChange(file, fileList) {
       this.fileList = fileList;
       // console.log(this.fileList)
     },
-    handleFileList(fileList) {
+    handleFileList(fileList, diaFormPhotoList) {
       let res = [];
-      fileList.forEach((item) => {
-        // console.log(item)
-        let url = item.response.data;
-        let back = url.substring(this.basePhotoUrl.length);
-        res.push(back);
+      // 假如不是 修改信息时   console.log(diaFormPhotoList.length == 0);  => true
+      if (diaFormPhotoList.length == 0) {
+        fileList.forEach((item) => {
+          // console.log(item)
+          let url = item.response.data;
+          let back = url.substring(this.basePhotoUrl.length);
+          res.push(back);
+        });
+        // console.log(res)
+        return res;
+      } else {
+        // 是修改信息,那么照片包括俩部分,1:fileList  2:diaFormPhotoList
+        fileList.forEach((item) => {
+          // console.log(item)
+          let url = item.response.data;
+          let back = url.substring(this.basePhotoUrl.length);
+          res.push(back);
+        });
+        diaFormPhotoList.forEach((item) => {
+          let back = item.substring(this.basePhotoUrl.length);
+          res.push(back);
+        });
+        // console.log(res)
+        return res;
+      }
+    },
+    // 修改信息
+    updateInfo(row) {
+      this.diaFormPhotoList = [];
+      this.title = "修改信息";
+      this.dialogVisibleForAddShop = true;
+      (this.textarea = row.describle),
+        (this.diaFormStatus = row.status),
+        (this.diaForm = {
+          categoryId: row.category,
+          createTime: row.createTime,
+          describle: row.describle,
+          id: row.id,
+          // image: row.image,
+          name: row.name,
+          price: row.price,
+          sales: row.sales,
+          status: row.status,
+          updateTime: row.updateTime,
+        });
+      this.updateShopId = row.id;
+      // console.log("id:"+this.updateShopId)
+      getImgById(row.id).then((res) => {
+        res.data.split(",").forEach((item) => {
+          item = this.basePhotoUrl + item;
+          this.diaFormPhotoList.push(item);
+        });
       });
-      // console.log(res)
-      return res;
+
+      // console.log(this.diaFormPhotoList);
+    },
+    saveShopH() {
+      this.$refs.diaForm.validate((valid) => {
+        if (valid) {
+          this.resList = this.handleFileList(
+            this.fileList,
+            this.diaFormPhotoList
+          );
+          this.diaFormStatus = "启售" == this.diaFormStatus ? 1 : 0;
+          // console.log("this.form" + this.diaForm)
+          if(this.resList.length == 0){
+            this.resList = 'empty'
+          }
+          let list = {
+            id: this.updateShopId,
+            name: this.diaForm.name,
+            price: this.diaForm.price,
+            categoryId: this.searchCateId,
+            describle: this.textarea,
+            images: this.resList,
+            status: this.diaFormStatus,
+          };
+          byNameFindCategoryId(this.diaForm.categoryId).then((res) => {
+            this.searchCateId = res.data;
+          });
+          // 执行添加操作
+          // 调用上传接口
+          console.log(list)
+          saveShop(list)
+            .then(() => {
+              this.dialogVisibleForAddShop = false;
+              this.$message({
+                showClose: true,
+                message: "更新成功",
+                type: "success",
+              });
+              this.queryShopPageList();
+            })
+            .catch((error) => {
+              this.$message({
+                showClose: true,
+                message: "更新失败",
+                type: "error",
+              });
+              this.dialogVisibleForAddShop = false;
+            });
+        } else {
+          // 验证失败
+          return false;
+        }
+      });
     },
     handlePreview(file) {
       // 预览文件的处理函数
@@ -224,11 +392,7 @@ export default {
         this.previewVisible = true; // 打开图片预览弹窗
       }
     },
-    handleRemove(file, fileList) {
-      // 移除文件的处理函数
-      this.fileList = fileList.filter((item) => item.uid != file.uid);
-      // console.log(this.fileList);
-    },
+    handleRemove(file, fileList) {},
     handleExceed(files, fileList) {
       this.$message.warning(
         `当前限制选择 3 个文件，本次选择了 ${files.length} 个文件，共选择了 ${
@@ -240,12 +404,33 @@ export default {
       return this.$confirm(`确定移除 ${file.name}？`);
     },
     // 搜索
-    handleQuery() {},
+    handleQuery() {
+      searchByName(this.input).then((res) => {
+        this.shopData = [];
+        res.data.forEach((item) => {
+          let iimage = item.image.split(",");
+          let resu = {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            describle: item.describle,
+            sales: item.sales,
+            status: item.status == 1 ? "启售" : "停售",
+            image: iimage[0],
+            createTime: item.createTime,
+            updateTime: item.updateTime,
+            category: item.categoryName,
+          };
+          this.shopData.push(resu);
+        });
+      });
+    },
     // 删除
     deleteHandle() {},
     // 改变状态
     statusHandle() {},
     addShop() {
+      this.title = "新增商品";
       this.dialogVisibleForAddShop = true;
     },
     // close dialog
@@ -264,16 +449,68 @@ export default {
         callback();
       }
     },
+    queryShopPageList() {
+      this.shopData = [];
+      getShopListByPageInfo({
+        pageSize: 10,
+        pageNum: 1,
+      }).then((res) => {
+        // console.log(res.data)
+        res.data.row.forEach((item) => {
+          let iimage = item.image.split(",");
+          let resu = {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            describle: item.describle,
+            sales: item.sales,
+            status: item.status == 1 ? "启售" : "停售",
+            image: iimage[0],
+            createTime: item.createTime,
+            updateTime: item.updateTime,
+            category: item.categoryName,
+          };
+          this.shopData.push(resu);
+        });
+        // console.log(this.shopData);
+      });
+    },
   },
   mounted() {
     getCategoryAllList().then((res) => {
       this.options = res.data.row;
+    });
+    getShopListByPageInfo({
+      pageSize: 10,
+      pageNum: 1,
+    }).then((res) => {
+      // console.log(res.data)
+      res.data.row.forEach((item) => {
+        let iimage = item.image.split(",");
+        let resu = {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          describle: item.describle,
+          sales: item.sales,
+          status: item.status == 1 ? "启售" : "停售",
+          image: iimage[0],
+          createTime: item.createTime,
+          updateTime: item.updateTime,
+          category: item.categoryName,
+        };
+        this.shopData.push(resu);
+      });
+      // console.log(this.shopData);
     });
   },
 };
 </script>
 
 <style scoped>
+.img:hover {
+  transform: scale(2.5);
+}
 .line {
   text-align: center;
 }

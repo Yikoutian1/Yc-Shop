@@ -29,5 +29,7 @@ public class ShopVo {
     //商品描述
     private String describle;
 
+    private Long sales;
+
     private List<String> images;
 }
