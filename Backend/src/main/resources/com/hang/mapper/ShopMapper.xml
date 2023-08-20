@@ -8,10 +8,52 @@
         insert into yc_shop.shop_category(shop_id, category_id)
             value (#{shop_id}, #{vo.categoryId})
     </insert>
+    <update id="updateStatusBatch">
+        update shop
+        set status = #{status}
+        where id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
 
     <select id="getImgById" resultType="java.lang.String">
         select image
         from yc_shop.shop
         where id = #{id}
+    </select>
+    <select id="selectShopListAndCategoryName" resultType="com.hang.vo.ShopExistTableVo">
+        SELECT s.id,
+               s.name,
+               s.price,
+               s.sales,
+               s.image,
+               c.name as categoryName,
+               s.describle,
+               s.status,
+               s.create_time,
+               s.update_time
+        FROM shop s
+                 LEFT JOIN shop_category sc ON s.id = sc.shop_id
+                 LEFT JOIN category c ON c.id = sc.category_id
+        ORDER BY s.id
+        LIMIT #{pageNum},#{pageSize}
+    </select>
+    <select id="selectShopByCategoryId" resultType="com.hang.vo.ShopExistTableVo">
+        SELECT s.id,
+               s.name,
+               s.price,
+               s.sales,
+               s.image,
+               c.name as categoryName,
+               s.describle,
+               s.status,
+               s.create_time,
+               s.update_time
+        FROM shop s
+                 LEFT JOIN shop_category sc ON s.id = sc.shop_id
+                 LEFT JOIN category c ON c.id = sc.category_id
+        where category_id = #{id}
+        ORDER BY s.id
     </select>
 </mapper>

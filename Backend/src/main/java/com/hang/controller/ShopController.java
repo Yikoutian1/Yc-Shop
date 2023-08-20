@@ -4,6 +4,7 @@ package com.hang.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hang.dto.PageDto;
+import com.hang.dto.ShopDto;
 import com.hang.dto.ShopInfoVo;
 import com.hang.entity.Shop;
 import com.hang.mapper.ShopMapper;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.annotation.WebServlet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -65,8 +67,19 @@ public class ShopController{
     }
     @PostMapping("saveShop")
     public ResponseResult saveShop(@RequestBody ShopInfoVo shopInfoVo){
-
         return shopService.updateShopById(shopInfoVo);
+    }
+    @DeleteMapping
+    public ResponseResult delShopBatchByIds(@RequestBody List<Long> ids){
+        return shopService.delShopBatchByIds(ids);
+    }
+    @PostMapping("/changeShopStatusBatch")
+    public ResponseResult changeShopStatusBatch(@RequestBody ShopDto shopDto){
+        return shopService.changeShopStatusBatch(shopDto);
+    }
+    @GetMapping("/selectShopByCategory")
+    public ResponseResult selectShopByCategory(@RequestParam("id") Long id){
+        return shopService.selectShopByCategoryId(id);
     }
 }
 

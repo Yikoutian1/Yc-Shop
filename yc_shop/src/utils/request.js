@@ -46,16 +46,17 @@ service.interceptors.response.use(
     const res = response.data;
 
     // if the custom code is not 20000, it is judged as an error.
-    if (res.code !== 200) {
-      Message({
-        message: res.message || "Error",
-        type: "error",
-        duration: 5 * 1000,
-      });
-      return Promise.reject(new Error(res.message || "Error"));
-    } else {
-      return res;
-    }
+    // if (res.code !== 200) {
+    //   Message({
+    //     message: res.message || "Error",
+    //     type: "error",
+    //     duration: 5 * 1000,
+    //   });
+    //   return Promise.reject(new Error(res.message || "Error"));
+    // } else {
+    //   return res;
+    // }
+    return res;
   },
   (error) => {
     console.log("err" + error); // for debug

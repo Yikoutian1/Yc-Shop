@@ -10,9 +10,18 @@
       </el-input>
       <el-button @click="handleQuery" class="el-button-search">搜索</el-button>
 
-      <span class="span-btn delBut non" @click="deleteHandle('批量', null)"
-        >批量删除</span
-      >
+      <el-select @change="selectShopByCategory" v-model="categorySelect" placeholder="请选择" style="margin-left: 8px;width: 120px;">
+        <el-option
+          v-for="item in options"
+          :key="item.id"
+          :value="item.id"
+          :label="item.name"
+          :disabled="!item.status"
+        >
+        </el-option>
+      </el-select>
+
+      <span class="span-btn delBut non" @click="deleteHandle">批量删除</span>
       <span class="span-btn blueBug non" @click="statusHandle('1')"
         >批量启售</span
       >
@@ -25,7 +34,7 @@
       <el-button type="primary" @click="addShop"> + 新增商品 </el-button>
     </div>
     <div>
-      <el-table :data="shopData">
+      <el-table :data="shopData" @selection-change="handleSelectionChange">
         <el-table-column
           type="selection"
           property="id"
@@ -52,7 +61,13 @@
         <el-table-column property="category" label="分类" width="120" />
         <el-table-column property="price" label="价格" width="100" />
         <el-table-column property="sales" label="销量" width="120" />
-        <el-table-column property="status" label="状态" width="80" />
+        <el-table-column label="状态" width="80">
+          <template slot-scope="scope">
+            <div :class="{ statuschange: scope.row.status == '停售' }">
+              {{ scope.row.status }}
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column property="describle" label="描述" width="300" />
         <el-table-column property="createTime" label="创建时间" width="150" />
         <el-table-column property="updateTime" label="更新时间" width="150" />
@@ -71,6 +86,19 @@
           </template>
         </el-table-column>
       </el-table>
+      <div id="pages">
+        <el-pagination
+          @size-change="sizeChangeQuery"
+          @current-change="currentQuery"
+          :current-page="1"
+          :page-sizes="[10, 20, 50, 100]"
+          :page-size="10"
+          class="pages-class"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+        >
+        </el-pagination>
+      </div>
     </div>
     <el-dialog
       :title="title"
@@ -158,7 +186,6 @@
       </div>
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleAddShopClose">取 消</el-button>
-
         <el-button
           v-if="this.title == '新增商品'"
           type="primary"
@@ -183,27 +210,36 @@ import { searchByName } from "@/api/shop";
 import { getImgById } from "@/api/shop";
 import { saveShop } from "@/api/shop";
 import { byNameFindCategoryId } from "@/api/category";
+import { delShopBatchByIds } from "@/api/shop";
+import { changeShopStatusBatch } from "@/api/shop";
+import { selectShopByCategoryBackend } from "@/api/shop";
 export default {
   data() {
     return {
-      title: "商品添加", // 默认为商品添加
-      input: "", // 搜索的值
+      title: "商品添加",     // 默认为商品添加
+      input: "",            // 搜索的值
       dialogVisibleForAddShop: false,
-      fileList: [], // 照片
-      options: [], // 选择的分类
-      value: "", // 选择的数据
-      diaForm: {}, // 添加的数据
-      textarea: "", // 商品描述内容
+      fileList: [],         // 照片
+      options: [],          // 选择的分类
+      value: "",            // 选择的数据
+      diaForm: {},          // 添加的数据
+      textarea: "",         // 商品描述内容
       uploadAction: "/images/upload", // 占位符，实际上传操作在后端处理
       previewVisible: false,
-      previewPath: "", // url
+      previewPath: "",      // url
       diaFormStatus: "启售", // 默认起售
       basePhotoUrl: "http://rzl9bicnx.hn-bkt.clouddn.com/",
-      resList: [], // 返回的url集合
-      shopData: [], // 商品集合
+      resList: [],          // 返回的url集合
+      shopData: [],         // 商品集合
       diaFormPhotoList: [], // 弹窗照片集合
-      searchCateId: 0, // 根据名字查询到的分类id
-      updateShopId: 0, // 全局更新商品id
+      searchCateId: 0,      // 根据名字查询到的分类id
+      updateShopId: 0,      // 全局更新商品id
+      selectedItems: [],    // 选择的行
+      selectedIds: [],      // 选择的ids
+      total: 0,
+      currentPageNum: 1,   // 默认页码1
+      currentPageSize: 10, // 默认一页10个
+      categorySelect: '' ,  // 默认筛选为0
       rules: {
         name: [{ required: true, message: "请输入商品名字", trigger: "blur" }],
         categoryId: [
@@ -225,6 +261,54 @@ export default {
   },
 
   methods: {
+    // 获取选中的数据
+    handleSelectionChange(selection) {
+      this.selectedItems = selection;
+      // console.log(selection)
+    },
+    // 删除
+    deleteHandle() {
+      this.$confirm("此操作将删除该文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          this.getSelectionIds();
+          delShopBatchByIds(this.selectedIds).then((res) => {
+            if (res.code === 200) {
+              this.queryShopPageList();
+              this.$message({
+                type: "success",
+                message: "删除成功!",
+              });
+            } else {
+              this.$message.error(res.msg);
+            }
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
+    },
+    getSelectionIds() {
+      this.selectedIds = [];
+      this.selectedItems.forEach((item) => {
+        this.selectedIds.push(item.id);
+      });
+      // console.log(this.selectedIds);
+    },
+    // 筛选
+    selectShopByCategory(){
+      // 分类id拿到进行筛选
+      selectShopByCategoryBackend(this.categorySelect).then(res=>{
+        this.changeShopDataFormdata(res.data.row, res.data);
+      })
+      console.log(this.categorySelect)
+    },
     addConfirm() {
       this.$refs.diaForm.validate((valid) => {
         if (valid) {
@@ -247,7 +331,7 @@ export default {
           shopInfoAdd(list)
             .then(() => {
               this.dialogVisibleForAddShop = false;
-              this.queryShopPageList()
+              this.queryShopPageList();
               this.$message({
                 showClose: true,
                 message: "上传成功",
@@ -331,7 +415,6 @@ export default {
           this.diaFormPhotoList.push(item);
         });
       });
-
       // console.log(this.diaFormPhotoList);
     },
     saveShopH() {
@@ -343,8 +426,8 @@ export default {
           );
           this.diaFormStatus = "启售" == this.diaFormStatus ? 1 : 0;
           // console.log("this.form" + this.diaForm)
-          if(this.resList.length == 0){
-            this.resList = 'empty'
+          if (this.resList.length == 0) {
+            this.resList = "empty.png";
           }
           let list = {
             id: this.updateShopId,
@@ -360,7 +443,7 @@ export default {
           });
           // 执行添加操作
           // 调用上传接口
-          console.log(list)
+          // console.log(list);
           saveShop(list)
             .then(() => {
               this.dialogVisibleForAddShop = false;
@@ -425,10 +508,47 @@ export default {
         });
       });
     },
-    // 删除
-    deleteHandle() {},
-    // 改变状态
-    statusHandle() {},
+    // 启售:停售 状态更改
+    statusHandle(row) {
+      let params = {};
+      if (typeof row === "string") {
+        if (this.selectedItems.length == 0) {
+          this.$message.error("批量操作，请先勾选操作分类！");
+          return false;
+        }
+        let idsArr = [];
+        this.selectedItems.forEach((item) => {
+          idsArr.push(item.id);
+        });
+        params.ids = idsArr;
+        params.status = row;
+      } else {
+        let idsArr = [];
+        idsArr.push(row.id);
+        params.ids = idsArr;
+        params.status = row.status ? "0" : "1";
+      }
+      this.$confirm("确认更改该套餐状态?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        console.log(params);
+        // 起售停售---批量起售停售接口
+        changeShopStatusBatch(params)
+          .then((res) => {
+            if (res.code === 200) {
+              this.$message.success("状态已经更改成功！");
+              this.queryShopPageList();
+            } else {
+              this.$message.error(res.msg || "操作失败");
+            }
+          })
+          .catch((err) => {
+            this.$message.error("请求出错了：" + err);
+          });
+      });
+    },
     addShop() {
       this.title = "新增商品";
       this.dialogVisibleForAddShop = true;
@@ -449,43 +569,55 @@ export default {
         callback();
       }
     },
-    queryShopPageList() {
-      this.shopData = [];
+    currentQuery(page) {
+      // console.log("pageNum:"+page)
+      // 切换页码 改变当前默认页码
+      if (page) {
+        this.currentPageNum = page;
+      }
       getShopListByPageInfo({
-        pageSize: 10,
-        pageNum: 1,
-      }).then((res) => {
-        // console.log(res.data)
-        res.data.row.forEach((item) => {
-          let iimage = item.image.split(",");
-          let resu = {
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            describle: item.describle,
-            sales: item.sales,
-            status: item.status == 1 ? "启售" : "停售",
-            image: iimage[0],
-            createTime: item.createTime,
-            updateTime: item.updateTime,
-            category: item.categoryName,
-          };
-          this.shopData.push(resu);
-        });
-        // console.log(this.shopData);
+        pageNum: page,
+        pageSize: this.currentPageSize,
+      }).then((result) => {
+        this.changeShopDataFormdata(result.data.row, result.data);
       });
     },
-  },
-  mounted() {
-    getCategoryAllList().then((res) => {
-      this.options = res.data.row;
-    });
-    getShopListByPageInfo({
-      pageSize: 10,
-      pageNum: 1,
-    }).then((res) => {
-      // console.log(res.data)
-      res.data.row.forEach((item) => {
+    sizeChangeQuery(pageSize) {
+      // console.log("pageSize:"+pageSize)
+      // 切换页的大小 改变当前默认大小
+      this.currentPageSize = pageSize;
+      getShopListByPageInfo({
+        pageNum: this.currentPageNum,
+        pageSize: pageSize,
+      }).then((result) => {
+        this.changeShopDataFormdata(result.data.row, result.data);
+        // result.data.row.forEach((item) => {
+        //   let iimage = item.image.split(",");
+        //   let resu = {
+        //     id: item.id,
+        //     name: item.name,
+        //     price: item.price,
+        //     describle: item.describle,
+        //     sales: item.sales,
+        //     status: item.status == 1 ? "启售" : "停售",
+        //     image: iimage[0],
+        //     createTime: item.createTime,
+        //     updateTime: item.updateTime,
+        //     category: item.categoryName,
+        //   };
+        //   this.shopData.push(resu);
+        // });
+        // this.total = parseInt(result.data.total);
+      });
+    },
+    /**
+     * 商品照片格式通用转型
+     * @param {res.data.row} row
+     * @param {res.data} data
+     */
+    changeShopDataFormdata(row, data) {
+      this.shopData = [];
+      row.forEach((item) => {
         let iimage = item.image.split(",");
         let resu = {
           id: item.id,
@@ -501,7 +633,29 @@ export default {
         };
         this.shopData.push(resu);
       });
-      // console.log(this.shopData);
+      this.total = parseInt(data.total);
+    },
+    // 更新商品页
+    queryShopPageList() {
+      this.shopData = [];
+      getShopListByPageInfo({
+        pageSize: 10,
+        pageNum: 1,
+      }).then((res) => {
+        this.changeShopDataFormdata(res.data.row, res.data);
+        // console.log(this.shopData);
+      });
+    },
+  },
+  mounted() {
+    getCategoryAllList().then((res) => {
+      this.options = res.data.row;
+    });
+    getShopListByPageInfo({
+      pageSize: 10,
+      pageNum: 1,
+    }).then((res) => {
+      this.changeShopDataFormdata(res.data.row, res.data);
     });
   },
 };
@@ -577,5 +731,8 @@ div .upload-demo {
   width: 178px;
   height: 178px;
   display: block;
+}
+.statuschange {
+  color: #fa5454;
 }
 </style>

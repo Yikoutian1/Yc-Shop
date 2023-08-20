@@ -92,7 +92,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public ResponseResult changeCategoryStatusBatch(CategoryUpdateDto categoryUpdateDto) {
         Integer status = categoryUpdateDto.getStatus();
         List<Long> ids = categoryUpdateDto.getIds();
-        System.out.println(categoryUpdateDto);
+//        System.out.println(categoryUpdateDto);
         baseMapper.updateStatusBatch(status, ids);
         return ResponseResult.okResult();
     }
