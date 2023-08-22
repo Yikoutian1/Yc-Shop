@@ -153,7 +153,16 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Category::getName,name);
         Category one = getOne(queryWrapper);
+        // 现在返回的就是id
         return ResponseResult.okResult(one.getId());
+    }
+
+    @Override
+    public ResponseResult byCategoryIdFindName(Long id) {
+        LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Category::getId,id);
+        Category one = getOne(queryWrapper);
+        return ResponseResult.okResult(one.getName());
     }
 }
 

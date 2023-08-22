@@ -27,6 +27,8 @@ public class ShopExistTableVo {
     private Long sales;
     //商品照片
     private String image;
+    //商品库存
+    private Long inventory;
     //商品描述
     private String categoryName;
 

@@ -27,5 +27,7 @@ public interface ShopMapper extends BaseMapper<Shop> {
     void updateStatusBatch(@Param("status") Integer status,@Param("ids") List<Long> ids);
 
     List<ShopExistTableVo> selectShopByCategoryId(@Param("id") Long id);
+
+    void updateShopCategoryInfo(@Param("shop_id") Long id,@Param("category_id") Long categoryId);
 }
 

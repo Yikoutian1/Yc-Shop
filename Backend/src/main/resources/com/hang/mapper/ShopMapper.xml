@@ -16,6 +16,11 @@
             #{id}
         </foreach>
     </update>
+    <update id="updateShopCategoryInfo">
+        update shop_category
+        set category_id = #{category_id}
+        where shop_id = #{shop_id}
+    </update>
 
     <select id="getImgById" resultType="java.lang.String">
         select image
@@ -27,6 +32,7 @@
                s.name,
                s.price,
                s.sales,
+               s.inventory,
                s.image,
                c.name as categoryName,
                s.describle,
@@ -36,6 +42,7 @@
         FROM shop s
                  LEFT JOIN shop_category sc ON s.id = sc.shop_id
                  LEFT JOIN category c ON c.id = sc.category_id
+        WHERE s.del_flag = 0
         ORDER BY s.id
         LIMIT #{pageNum},#{pageSize}
     </select>
@@ -44,6 +51,7 @@
                s.name,
                s.price,
                s.sales,
+               s.inventory,
                s.image,
                c.name as categoryName,
                s.describle,

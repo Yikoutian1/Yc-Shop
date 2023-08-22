@@ -23,6 +23,8 @@ public class ShopInfoVo {
     private Long id;
     //商品名
     private String name;
+    //商品库存
+    private Long inventory;
     //商品价格w
     private Double price;
     //商品描述
@@ -31,7 +33,7 @@ public class ShopInfoVo {
     private Integer status;
 
     private List<String> images;
-
+    private Long sales;
     private Long categoryId;
 
 }

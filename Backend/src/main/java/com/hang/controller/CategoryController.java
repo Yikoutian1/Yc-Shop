@@ -11,6 +11,7 @@ import com.hang.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.List;
 
 /**
@@ -60,5 +61,10 @@ public class CategoryController{
     public ResponseResult byNameFindCategoryId(@RequestParam("name") String name){
         return categoryService.byNameFindCategoryId(name);
     }
+    @GetMapping("/byCategoryIdFindName")
+    public ResponseResult byCategoryIdFindName(@RequestParam("id") Long id){
+        return categoryService.byCategoryIdFindName(id);
+    }
+
 }
 

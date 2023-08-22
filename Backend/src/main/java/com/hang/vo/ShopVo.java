@@ -28,6 +28,8 @@ public class ShopVo {
     private String image;
     //商品描述
     private String describle;
+    //商品库存
+    private Long inventory;
 
     private Long sales;
 

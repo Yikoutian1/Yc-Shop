@@ -33,9 +33,9 @@
       <el-table-column label="编号" width="55">
         <template #default="scope">{{ scope.row.id }}</template>
       </el-table-column>
-      <el-table-column property="name" label="分类名称" width="120" />
-      <el-table-column property="sort" label="排序" width="60" />
-      <el-table-column label="状态" width="70">
+      <el-table-column property="name" label="分类名称" width="350" />
+      <el-table-column property="sort" label="排序" width="90" />
+      <el-table-column label="状态" width="100">
         <template #default="scope">
           <span style="margin-right: 10px">{{
             scope.row.status == "0" ? "停售" : "启售"
@@ -43,11 +43,13 @@
         </template>
       </el-table-column>
       <el-table-column
+        width="200"
         property="createTime"
         label="创建时间"
         show-overflow-tooltip
       />
       <el-table-column
+        width="200"
         property="updateTime"
         label="更新时间"
         show-overflow-tooltip

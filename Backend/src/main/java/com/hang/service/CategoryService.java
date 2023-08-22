@@ -40,5 +40,7 @@ public interface CategoryService extends IService<Category> {
     List<ShopExistTableVo> getCategoryNameList(List<Shop> records);
 
     ResponseResult byNameFindCategoryId(String name);
+
+    ResponseResult byCategoryIdFindName(Long id);
 }
 

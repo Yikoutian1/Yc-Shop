@@ -9,8 +9,12 @@
       >
       </el-input>
       <el-button @click="handleQuery" class="el-button-search">搜索</el-button>
-
-      <el-select @change="selectShopByCategory" v-model="categorySelect" placeholder="请选择" style="margin-left: 8px;width: 120px;">
+      <el-select
+        @change="selectShopByCategory"
+        v-model="categorySelect"
+        placeholder="请选择"
+        style="margin-left: 8px; width: 120px"
+      >
         <el-option
           v-for="item in options"
           :key="item.id"
@@ -61,6 +65,7 @@
         <el-table-column property="category" label="分类" width="120" />
         <el-table-column property="price" label="价格" width="100" />
         <el-table-column property="sales" label="销量" width="120" />
+        <el-table-column property="inventory" label="库存" width="120" />
         <el-table-column label="状态" width="80">
           <template slot-scope="scope">
             <div :class="{ statuschange: scope.row.status == '停售' }">
@@ -117,12 +122,28 @@
             style="width: 230px"
           ></el-input>
         </el-form-item>
+        <el-form-item label="商品销量">
+          <el-input-number
+            size="small"
+            v-model="diaForm.sales"
+            :min="0"
+            :step="1"
+          ></el-input-number>
+        </el-form-item>
+        <el-form-item label="商品库存">
+          <el-input-number
+            size="small"
+            v-model="diaForm.inventory"
+            :min="0"
+            :step="1"
+          ></el-input-number>
+        </el-form-item>
         <el-form-item label="选择分类名称" prop="categoryId">
-          <el-select v-model="diaForm.categoryId" placeholder="请选择">
+          <el-select v-model="diaFormCategoryName" placeholder="请选择">
             <el-option
               v-for="item in options"
               :key="item.id"
-              :value="item.id"
+              :value="item.name"
               :label="item.name"
               :disabled="!item.status"
             >
@@ -213,36 +234,39 @@ import { byNameFindCategoryId } from "@/api/category";
 import { delShopBatchByIds } from "@/api/shop";
 import { changeShopStatusBatch } from "@/api/shop";
 import { selectShopByCategoryBackend } from "@/api/shop";
+import { byCategoryIdFindName } from "@/api/category";
+
 export default {
   data() {
     return {
-      title: "商品添加",     // 默认为商品添加
-      input: "",            // 搜索的值
+      title: "商品添加", // 默认为商品添加
+      input: "", // 搜索的值
       dialogVisibleForAddShop: false,
-      fileList: [],         // 照片
-      options: [],          // 选择的分类
-      value: "",            // 选择的数据
-      diaForm: {},          // 添加的数据
-      textarea: "",         // 商品描述内容
+      fileList: [], // 照片
+      options: [], // 选择的分类
+      value: "", // 选择的数据
+      diaForm: {}, // 添加的数据
+      diaFormCategoryName: "", // 回显的分类名
+      textarea: "", // 商品描述内容
       uploadAction: "/images/upload", // 占位符，实际上传操作在后端处理
       previewVisible: false,
-      previewPath: "",      // url
+      previewPath: "", // url
       diaFormStatus: "启售", // 默认起售
       basePhotoUrl: "http://rzl9bicnx.hn-bkt.clouddn.com/",
-      resList: [],          // 返回的url集合
-      shopData: [],         // 商品集合
+      resList: [], // 返回的url集合
+      shopData: [], // 商品集合
       diaFormPhotoList: [], // 弹窗照片集合
-      searchCateId: 0,      // 根据名字查询到的分类id
-      updateShopId: 0,      // 全局更新商品id
-      selectedItems: [],    // 选择的行
-      selectedIds: [],      // 选择的ids
+      searchCateId: 0, // 根据名字查询到的分类id
+      updateShopId: 0, // 全局更新商品id
+      selectedItems: [], // 选择的行
+      selectedIds: [], // 选择的ids
       total: 0,
-      currentPageNum: 1,   // 默认页码1
+      currentPageNum: 1, // 默认页码1
       currentPageSize: 10, // 默认一页10个
-      categorySelect: '' ,  // 默认筛选为0
+      categorySelect: "", // 默认筛选为0
       rules: {
         name: [{ required: true, message: "请输入商品名字", trigger: "blur" }],
-        categoryId: [
+        diaFormCategoryName: [
           { required: true, message: "请选择分类", trigger: "blur" },
         ],
         price: [
@@ -302,14 +326,26 @@ export default {
       // console.log(this.selectedIds);
     },
     // 筛选
-    selectShopByCategory(){
+    selectShopByCategory() {
       // 分类id拿到进行筛选
-      selectShopByCategoryBackend(this.categorySelect).then(res=>{
-        this.changeShopDataFormdata(res.data.row, res.data);
-      })
-      console.log(this.categorySelect)
+      selectShopByCategoryBackend(this.categorySelect).then((res) => {
+        // console.log(res);
+        this.changeShopDataFormdata(res.data, res.data);
+        // url 拼接
+        this.shopData.forEach((item) => {
+          item.image.split(",").forEach((iitem) => {
+            item.image = this.basePhotoUrl + iitem;
+          });
+          // console.log(item.image);
+        });
+      });
     },
-    addConfirm() {
+    async addConfirm() {
+      await byNameFindCategoryId(this.diaFormCategoryName).then((res) => {
+        this.searchCateId = res.data;
+        // console.log("res" + res.data);
+        this.diaForm.categoryId = this.searchCateId;
+      });
       this.$refs.diaForm.validate((valid) => {
         if (valid) {
           this.resList = this.handleFileList(
@@ -322,6 +358,8 @@ export default {
             price: this.diaForm.price,
             categoryId: this.diaForm.categoryId,
             describle: this.textarea,
+            inventory: this.diaForm.inventory,
+            sales: this.diaForm.sales,
             images: this.resList,
             status: this.diaFormStatus,
           };
@@ -390,26 +428,43 @@ export default {
     },
     // 修改信息
     updateInfo(row) {
+      // console.log(row)
+      // byCategoryIdFindName(row.category).then((res) => {
+      //   this.diaFormCategoryName = res.data;
+      //   console.log(res);
+      // });
+      this.diaFormCategoryName = row.category;
+      byNameFindCategoryId(row.category).then((res) => {
+        this.searchCateId = res.data;
+        // console.log("res" + res.data);
+        this.diaForm.categoryId = this.searchCateId;
+      });
+
       this.diaFormPhotoList = [];
+      this.diaForm = {};
       this.title = "修改信息";
       this.dialogVisibleForAddShop = true;
-      (this.textarea = row.describle),
-        (this.diaFormStatus = row.status),
-        (this.diaForm = {
-          categoryId: row.category,
-          createTime: row.createTime,
-          describle: row.describle,
-          id: row.id,
-          // image: row.image,
-          name: row.name,
-          price: row.price,
-          sales: row.sales,
-          status: row.status,
-          updateTime: row.updateTime,
-        });
+      this.textarea = row.describle;
+      this.diaFormStatus = row.status;
+      this.diaForm = {
+        inventory: row.inventory,
+        categoryId: this.searchCateId,
+        createTime: row.createTime,
+        describle: row.describle,
+        categoryName: row.category,
+        id: row.id,
+        // image: row.image,
+        name: row.name,
+        price: row.price,
+        sales: row.sales,
+        status: row.status,
+        updateTime: row.updateTime,
+      };
       this.updateShopId = row.id;
+      console.log(this.diaForm);
       // console.log("id:"+this.updateShopId)
       getImgById(row.id).then((res) => {
+        // console.log(row.id)
         res.data.split(",").forEach((item) => {
           item = this.basePhotoUrl + item;
           this.diaFormPhotoList.push(item);
@@ -417,7 +472,13 @@ export default {
       });
       // console.log(this.diaFormPhotoList);
     },
-    saveShopH() {
+    async saveShopH() {
+      let listCategoryId
+      await byNameFindCategoryId(this.diaFormCategoryName).then((res) => {
+        // console.log(res.data)
+        listCategoryId = res.data;
+      });
+      
       this.$refs.diaForm.validate((valid) => {
         if (valid) {
           this.resList = this.handleFileList(
@@ -433,14 +494,16 @@ export default {
             id: this.updateShopId,
             name: this.diaForm.name,
             price: this.diaForm.price,
-            categoryId: this.searchCateId,
+            inventory: this.diaForm.inventory,
+            categoryId: listCategoryId,
             describle: this.textarea,
+            sales: this.diaForm.sales,
             images: this.resList,
             status: this.diaFormStatus,
           };
-          byNameFindCategoryId(this.diaForm.categoryId).then((res) => {
-            this.searchCateId = res.data;
-          });
+          // 新值  是name
+          // console.log("list:" + this.diaFormCategoryName);
+
           // 执行添加操作
           // 调用上传接口
           // console.log(list);
@@ -497,6 +560,7 @@ export default {
             name: item.name,
             price: item.price,
             describle: item.describle,
+            inventory: item.inventory,
             sales: item.sales,
             status: item.status == 1 ? "启售" : "停售",
             image: iimage[0],
@@ -533,7 +597,7 @@ export default {
         cancelButtonText: "取消",
         type: "warning",
       }).then(() => {
-        console.log(params);
+        // console.log(params);
         // 起售停售---批量起售停售接口
         changeShopStatusBatch(params)
           .then((res) => {
@@ -625,6 +689,7 @@ export default {
           price: item.price,
           describle: item.describle,
           sales: item.sales,
+          inventory: item.inventory,
           status: item.status == 1 ? "启售" : "停售",
           image: iimage[0],
           createTime: item.createTime,

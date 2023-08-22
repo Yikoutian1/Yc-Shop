@@ -15,7 +15,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
  * (Shop)表实体类
  *
  * @author makejava
- * @since 2023-08-19 15:47:02
+ * @since 2023-08-21 14:55:07
  */
 @SuppressWarnings("serial")
 @Data
@@ -23,13 +23,15 @@ import com.baomidou.mybatisplus.annotation.TableName;
 @NoArgsConstructor
 @TableName("shop")
 public class Shop  {
+
     @TableId
     private Long id;
-
     //商品名
     private String name;
     //商品价格
     private Double price;
+    //商品库存
+    private Long inventory;
     //商品销量
     private Long sales;
     //商品照片
@@ -46,8 +48,6 @@ public class Shop  {
     //更新时间
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
-
-
 
 }
 

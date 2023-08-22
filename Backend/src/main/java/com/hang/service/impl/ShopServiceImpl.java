@@ -43,7 +43,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     private TransactionDefinition transactionDefinition;
     @Autowired
     private CategoryService categoryService;
-
     @Override
     public ResponseResult addShopInfo(ShopInfoVo shopInfoVo) {
         TransactionStatus transactionStatus = dataSourceTransactionManager.getTransaction(transactionDefinition);
@@ -104,21 +103,33 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
 
     @Override
     public ResponseResult updateShopById(ShopInfoVo shopInfoVo) {
+        TransactionStatus transactionStatus = dataSourceTransactionManager.getTransaction(transactionDefinition);
         Shop shop = BeanCopyUtils.copyBean(shopInfoVo, Shop.class);
         // 集合转字符串
         String images = shopInfoVo.getImages()
                 .stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
-        ;
         shop.setImage(images);
-        updateById(shop);
-        return ResponseResult.okResult();
+        Long categoryId = shopInfoVo.getCategoryId();
+        try {
+            // 修改商品表
+            updateById(shop);
+            // 修改分类商品表
+            baseMapper.updateShopCategoryInfo(shop.getId(),categoryId);
+            dataSourceTransactionManager.commit(transactionStatus);// 手动commit
+            return ResponseResult.okResult();
+        }catch (Exception e){
+            dataSourceTransactionManager.rollback(transactionStatus);
+            throw new RuntimeException("更新商品失败");
+        }
     }
 
     @Override
     public ResponseResult getShopList() {
-        List<Shop> list = list();
+        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Shop::getDelFlag,0);// 0起售
+        List<Shop> list = list(queryWrapper);
         list.stream().map(item -> {
             String[] split = item.getImage().split(",");
             for (int i = 0; i < split.length; i++) {
@@ -145,7 +156,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
 //        Page<Shop> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
         Integer pageNum = (pageDto.getPageNum()-1) * pageDto.getPageSize();
         // 总数据
-        Integer count=baseMapper.selectCount(null);
+        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Shop::getDelFlag,0);// 0起售
+        Integer count=baseMapper.selectCount(queryWrapper);
         // 总页数
         Integer total = count / pageDto.getPageSize();
         System.out.println(total);
