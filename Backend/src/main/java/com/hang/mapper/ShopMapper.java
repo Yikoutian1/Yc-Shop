@@ -22,12 +22,14 @@ public interface ShopMapper extends BaseMapper<Shop> {
     void insertIntoShopCategory(@Param("vo") ShopInfoVo shopInfoVo,@Param("shop_id") Long id);
     String getImgById(@Param("id")Long id);
 
-    List<ShopExistTableVo> selectShopListAndCategoryName(@Param("pageNum") Integer pageNum, @Param("pageSize") Integer pageSize);
+    List<ShopExistTableVo> selectShopListAndCategoryName(@Param("pageNum") Integer pageNum, @Param("pageSize") Integer pageSize,@Param("category_id") String categorySelect);
 
     void updateStatusBatch(@Param("status") Integer status,@Param("ids") List<Long> ids);
 
-    List<ShopExistTableVo> selectShopByCategoryId(@Param("id") Long id);
+    List<ShopExistTableVo> selectShopByCategoryId(@Param("id") Long id,@Param("pageNum") Integer pageNum, @Param("pageSize") Integer pageSize);
 
     void updateShopCategoryInfo(@Param("shop_id") Long id,@Param("category_id") Long categoryId);
+
+    Integer selectMyCount(@Param("category_id") String categorySelect);
 }
 

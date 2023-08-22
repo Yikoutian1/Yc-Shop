@@ -3,10 +3,7 @@ package com.hang.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.hang.dto.CategoryUpdateDto;
-import com.hang.dto.PageDto;
-import com.hang.dto.ShopDto;
-import com.hang.dto.ShopInfoVo;
+import com.hang.dto.*;
 import com.hang.entity.Category;
 import com.hang.entity.Shop;
 import com.hang.mapper.ShopMapper;
@@ -26,6 +23,7 @@ import org.springframework.transaction.TransactionStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +41,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     private TransactionDefinition transactionDefinition;
     @Autowired
     private CategoryService categoryService;
+
     @Override
     public ResponseResult addShopInfo(ShopInfoVo shopInfoVo) {
         TransactionStatus transactionStatus = dataSourceTransactionManager.getTransaction(transactionDefinition);
@@ -71,17 +70,18 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     public ResponseResult delShopBatchByIds(List<Long> ids) {
         LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Shop::getStatus, 1) // 1:在售  0:未售卖
-                .in(Shop::getId,ids);
+                .in(Shop::getId, ids);
         Integer count = baseMapper.selectCount(queryWrapper);
         if (count > 0) {
             return ResponseResult.errorResult(201, "当前选择的商品在售卖,不能删除");
-        }else {
+        } else {
             // 可以删除
             baseMapper.deleteBatchIds(ids);
             return ResponseResult.okResult();
         }
 
     }
+
     @Override
     public ResponseResult changeShopStatusBatch(ShopDto shopDto) {
         Integer status = shopDto.getStatus();
@@ -92,13 +92,16 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
 
     /**
      * 根据分类id查询商品
+     *
      * @param id
      * @return
      */
     @Override
     public ResponseResult selectShopByCategoryId(Long id) {
-        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopByCategoryId(id);
-        return ResponseResult.okResult(shopExistTableVos);
+        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopByCategoryId(id,1,20);
+        Integer count = baseMapper.selectMyCount(String.valueOf(id));
+        ShopCategoryPageVo pageVo = new ShopCategoryPageVo(shopExistTableVos,count);
+        return ResponseResult.okResult(pageVo);
     }
 
     @Override
@@ -116,10 +119,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             // 修改商品表
             updateById(shop);
             // 修改分类商品表
-            baseMapper.updateShopCategoryInfo(shop.getId(),categoryId);
+            baseMapper.updateShopCategoryInfo(shop.getId(), categoryId);
             dataSourceTransactionManager.commit(transactionStatus);// 手动commit
             return ResponseResult.okResult();
-        }catch (Exception e){
+        } catch (Exception e) {
             dataSourceTransactionManager.rollback(transactionStatus);
             throw new RuntimeException("更新商品失败");
         }
@@ -128,7 +131,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Override
     public ResponseResult getShopList() {
         LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Shop::getDelFlag,0);// 0起售
+        queryWrapper.eq(Shop::getDelFlag, 0);// 0起售
         List<Shop> list = list(queryWrapper);
         list.stream().map(item -> {
             String[] split = item.getImage().split(",");
@@ -151,22 +154,26 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         }).collect(Collectors.toList());
         return ResponseResult.okResult(shopVos);
     }
+
+    /**
+     * Page<Category> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
+     * LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
+     * // 排序
+     * queryWrapper.orderByAsc(Category::getSort);
+     * page(page, queryWrapper);
+     * List<Category> records = page.getRecords();
+     * List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(records, CategoryVo.class);
+     * long total = page.getTotal();
+     * CategoryPageVo pageVo = new CategoryPageVo(categoryVos, total);
+     * return ResponseResult.okResult(pageVo);
+     */
     @Override
-    public ResponseResult getShopListByPageInfo(PageDto pageDto) {
+    public ResponseResult getShopListByPageInfo(ShopPageInfoVo shopPageInfoVo) {
 //        Page<Shop> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
-        Integer pageNum = (pageDto.getPageNum()-1) * pageDto.getPageSize();
+        Integer pageNum = (shopPageInfoVo.getPageNum() - 1) * shopPageInfoVo.getPageSize();
         // 总数据
-        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Shop::getDelFlag,0);// 0起售
-        Integer count=baseMapper.selectCount(queryWrapper);
-        // 总页数
-        Integer total = count / pageDto.getPageSize();
-        System.out.println(total);
-        // size > 总数
-        if(count <= pageDto.getPageSize()){
-            total = 1;
-        }
-        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopListAndCategoryName(pageNum, pageDto.getPageSize());
+        Integer count = baseMapper.selectMyCount(shopPageInfoVo.getCategorySelect());
+        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopListAndCategoryName(pageNum, shopPageInfoVo.getPageSize(), shopPageInfoVo.getCategorySelect());
         shopExistTableVos.stream().map(item -> {
             String[] split = item.getImage().split(",");
             for (int i = 0; i < split.length; i++) {
@@ -176,9 +183,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             item.setImage(res);
             return item;
         }).collect(Collectors.toList());
-        ShopPageVo pageVo = new ShopPageVo(shopExistTableVos, total.longValue());
+        ShopPageVo pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
         return ResponseResult.okResult(pageVo);
     }
+
     @Override
     public ResponseResult queryShopById(Long id) {
         List<String> imagess = new ArrayList<>();

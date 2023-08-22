@@ -42,7 +42,12 @@
         FROM shop s
                  LEFT JOIN shop_category sc ON s.id = sc.shop_id
                  LEFT JOIN category c ON c.id = sc.category_id
-        WHERE s.del_flag = 0
+        <where>
+            <if test="category_id != null and category_id != '' ">
+                and c.id = #{category_id}
+            </if>
+            and s.del_flag = 0
+        </where>
         ORDER BY s.id
         LIMIT #{pageNum},#{pageSize}
     </select>
@@ -63,5 +68,18 @@
                  LEFT JOIN category c ON c.id = sc.category_id
         where category_id = #{id}
         ORDER BY s.id
+        LIMIT #{pageNum},#{pageSize}
+    </select>
+    <select id="selectMyCount" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM shop s
+        LEFT JOIN shop_category sc ON s.id = sc.shop_id
+        <where>
+            <if test="category_id != null and category_id != '' ">
+                and sc.category_id = #{category_id}
+            </if>
+            and s.del_flag = 0
+        </where>
+
     </select>
 </mapper>

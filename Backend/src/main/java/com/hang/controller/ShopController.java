@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hang.dto.PageDto;
 import com.hang.dto.ShopDto;
 import com.hang.dto.ShopInfoVo;
+import com.hang.dto.ShopPageInfoVo;
 import com.hang.entity.Shop;
 import com.hang.mapper.ShopMapper;
 import com.hang.result.ResponseResult;
@@ -46,12 +47,12 @@ public class ShopController{
 
     /**
      * 后台商品分页接口
-     * @param pageDto
+     * @param shopPageInfoVo
      * @return
      */
     @PostMapping("/getShopListByPageInfo")
-    public ResponseResult getShopListByPageInfo(@RequestBody PageDto pageDto){
-        return shopService.getShopListByPageInfo(pageDto);
+    public ResponseResult getShopListByPageInfo(@RequestBody ShopPageInfoVo shopPageInfoVo){
+        return shopService.getShopListByPageInfo(shopPageInfoVo);
     }
     @GetMapping("/queryShopById")
     public ResponseResult queryShopById(@RequestParam("id") Long id){

@@ -24,7 +24,6 @@
         >
         </el-option>
       </el-select>
-
       <span class="span-btn delBut non" @click="deleteHandle">批量删除</span>
       <span class="span-btn blueBug non" @click="statusHandle('1')"
         >批量启售</span
@@ -37,73 +36,66 @@
       >
       <el-button type="primary" @click="addShop"> + 新增商品 </el-button>
     </div>
-    <div>
-      <el-table :data="shopData" @selection-change="handleSelectionChange">
-        <el-table-column
-          type="selection"
-          property="id"
-          label="编号"
-          width="60"
-        />
-        <el-table-column property="id" label="编号" width="60" />
-        <el-table-column label="图片" width="100px;">
-          <template slot-scope="scope">
-            <el-popover placement="right" trigger="hover">
-              <img
-                :src="scope.row.image"
-                style="max-width: 400px; max-height: 400px"
-              />
-              <img
-                slot="reference"
-                :src="scope.row.image"
-                style="width: 50px; height: 50px; vertical-align: middle"
-              />
-            </el-popover>
-          </template>
-        </el-table-column>
-        <el-table-column property="name" label="商品名" width="200" />
-        <el-table-column property="category" label="分类" width="120" />
-        <el-table-column property="price" label="价格" width="100" />
-        <el-table-column property="sales" label="销量" width="120" />
-        <el-table-column property="inventory" label="库存" width="120" />
-        <el-table-column label="状态" width="80">
-          <template slot-scope="scope">
-            <div :class="{ statuschange: scope.row.status == '停售' }">
-              {{ scope.row.status }}
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column property="describle" label="描述" width="300" />
-        <el-table-column property="createTime" label="创建时间" width="150" />
-        <el-table-column property="updateTime" label="更新时间" width="150" />
-        <el-table-column label="操作" width="160" align="center">
-          <!-- 修改信息 -->
-          <template slot-scope="scope">
-            <el-button
-              type="text"
-              size="small"
-              class="blueBug"
-              style="font-size: small"
-              @click="updateInfo(scope.row)"
-            >
-              修改
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div id="pages">
-        <el-pagination
-          @size-change="sizeChangeQuery"
-          @current-change="currentQuery"
-          :current-page="1"
-          :page-sizes="[10, 20, 50, 100]"
-          :page-size="10"
-          class="pages-class"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-        >
-        </el-pagination>
-      </div>
+    <el-table :data="shopData" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" property="id" label="编号" width="60" />
+      <el-table-column property="id" label="编号" width="60" />
+      <el-table-column label="图片" width="100px;">
+        <template slot-scope="scope">
+          <el-popover placement="right" trigger="hover">
+            <img
+              :src="scope.row.image"
+              style="max-width: 400px; max-height: 400px"
+            />
+            <img
+              slot="reference"
+              :src="scope.row.image"
+              style="width: 50px; height: 50px; vertical-align: middle"
+            />
+          </el-popover>
+        </template>
+      </el-table-column>
+      <el-table-column property="name" label="商品名" width="200" />
+      <el-table-column property="category" label="分类" width="120" />
+      <el-table-column property="price" label="价格" width="100" />
+      <el-table-column property="sales" label="销量" width="120" />
+      <el-table-column property="inventory" label="库存" width="120" />
+      <el-table-column label="状态" width="80">
+        <template slot-scope="scope">
+          <div :class="{ statuschange: scope.row.status == '停售' }">
+            {{ scope.row.status }}
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column property="describle" label="描述" width="300" />
+      <el-table-column property="createTime" label="创建时间" width="150" />
+      <el-table-column property="updateTime" label="更新时间" width="150" />
+      <el-table-column label="操作" width="160" align="center">
+        <!-- 修改信息 -->
+        <template slot-scope="scope">
+          <el-button
+            type="text"
+            size="small"
+            class="blueBug"
+            style="font-size: small"
+            @click="updateInfo(scope.row)"
+          >
+            修改
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div id="pages">
+      <el-pagination
+        @size-change="sizeChangeQuery"
+        @current-change="currentQuery"
+        :current-page="currentPageNum"
+        :page-sizes="[20, 50, 100, 200]"
+        :page-size="20"
+        class="pages-class"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+      >
+      </el-pagination>
     </div>
     <el-dialog
       :title="title"
@@ -262,7 +254,7 @@ export default {
       selectedIds: [], // 选择的ids
       total: 0,
       currentPageNum: 1, // 默认页码1
-      currentPageSize: 10, // 默认一页10个
+      currentPageSize: 20, // 默认一页20个
       categorySelect: "", // 默认筛选为0
       rules: {
         name: [{ required: true, message: "请输入商品名字", trigger: "blur" }],
@@ -329,8 +321,9 @@ export default {
     selectShopByCategory() {
       // 分类id拿到进行筛选
       selectShopByCategoryBackend(this.categorySelect).then((res) => {
-        // console.log(res);
-        this.changeShopDataFormdata(res.data, res.data);
+        // console.log(res.data);
+        this.total = res.data.total;
+        this.changeShopDataFormdata(res.data.list, res);
         // url 拼接
         this.shopData.forEach((item) => {
           item.image.split(",").forEach((iitem) => {
@@ -473,12 +466,12 @@ export default {
       // console.log(this.diaFormPhotoList);
     },
     async saveShopH() {
-      let listCategoryId
+      let listCategoryId;
       await byNameFindCategoryId(this.diaFormCategoryName).then((res) => {
         // console.log(res.data)
         listCategoryId = res.data;
       });
-      
+
       this.$refs.diaForm.validate((valid) => {
         if (valid) {
           this.resList = this.handleFileList(
@@ -634,46 +627,36 @@ export default {
       }
     },
     currentQuery(page) {
-      // console.log("pageNum:"+page)
       // 切换页码 改变当前默认页码
       if (page) {
         this.currentPageNum = page;
       }
       getShopListByPageInfo({
-        pageNum: page,
+        pageNum: this.currentPageNum,
         pageSize: this.currentPageSize,
+        categorySelect:this.categorySelect
       }).then((result) => {
+        this.shopData = [];
+        // console.log(result.data)
         this.changeShopDataFormdata(result.data.row, result.data);
+
+        this.total = parseInt(result.data.total);
       });
     },
-    sizeChangeQuery(pageSize) {
-      // console.log("pageSize:"+pageSize)
+    sizeChangeQuery(size) {
       // 切换页的大小 改变当前默认大小
-      this.currentPageSize = pageSize;
+      this.currentPageSize = size;
       getShopListByPageInfo({
         pageNum: this.currentPageNum,
-        pageSize: pageSize,
+        pageSize: size,
+        categorySelect:this.categorySelect
       }).then((result) => {
+        this.shopData = [];
         this.changeShopDataFormdata(result.data.row, result.data);
-        // result.data.row.forEach((item) => {
-        //   let iimage = item.image.split(",");
-        //   let resu = {
-        //     id: item.id,
-        //     name: item.name,
-        //     price: item.price,
-        //     describle: item.describle,
-        //     sales: item.sales,
-        //     status: item.status == 1 ? "启售" : "停售",
-        //     image: iimage[0],
-        //     createTime: item.createTime,
-        //     updateTime: item.updateTime,
-        //     category: item.categoryName,
-        //   };
-        //   this.shopData.push(resu);
-        // });
-        // this.total = parseInt(result.data.total);
+        this.total = parseInt(result.data.total);
       });
     },
+
     /**
      * 商品照片格式通用转型
      * @param {res.data.row} row
@@ -698,17 +681,20 @@ export default {
         };
         this.shopData.push(resu);
       });
-      this.total = parseInt(data.total);
+      if (!isNaN(data.total)) {
+        this.total = parseInt(data.total);
+      }
+      // console.log(this.shopData)
     },
     // 更新商品页
     queryShopPageList() {
       this.shopData = [];
       getShopListByPageInfo({
-        pageSize: 10,
+        pageSize: 20,
         pageNum: 1,
       }).then((res) => {
+        this.total = parseInt(res.data.total);
         this.changeShopDataFormdata(res.data.row, res.data);
-        // console.log(this.shopData);
       });
     },
   },
@@ -717,10 +703,11 @@ export default {
       this.options = res.data.row;
     });
     getShopListByPageInfo({
-      pageSize: 10,
+      pageSize: 20,
       pageNum: 1,
     }).then((res) => {
       this.changeShopDataFormdata(res.data.row, res.data);
+      this.total = parseInt(res.data.total);
     });
   },
 };

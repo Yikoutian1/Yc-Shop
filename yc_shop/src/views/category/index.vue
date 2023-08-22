@@ -284,12 +284,12 @@ export default {
       if (page) {
         this.currentPageNum = page;
       }
-
       queryPage({
         pageNum: page,
         pageSize: this.currentPageSize,
       }).then((result) => {
         this.categoryList = result.data.row;
+        console.log(this.categoryList)
         this.total = parseInt(result.data.total);
       });
     },
