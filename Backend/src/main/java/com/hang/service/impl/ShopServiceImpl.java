@@ -11,11 +11,13 @@ import com.hang.result.ResponseResult;
 import com.hang.service.CategoryService;
 import com.hang.service.ShopService;
 import com.hang.utils.BeanCopyUtils;
+import com.hang.utils.RedisCache;
 import com.hang.vo.*;
 import io.swagger.models.auth.In;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionDefinition;
@@ -24,6 +26,7 @@ import org.springframework.transaction.TransactionStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +44,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     private TransactionDefinition transactionDefinition;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Override
     public ResponseResult addShopInfo(ShopInfoVo shopInfoVo) {
@@ -98,7 +103,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
      */
     @Override
     public ResponseResult selectShopByCategoryId(Long id) {
-        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopByCategoryId(id,1,20);
+        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopByCategoryId(id,0,20);
         Integer count = baseMapper.selectMyCount(String.valueOf(id));
         ShopCategoryPageVo pageVo = new ShopCategoryPageVo(shopExistTableVos,count);
         return ResponseResult.okResult(pageVo);
@@ -170,10 +175,26 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Override
     public ResponseResult getShopListByPageInfo(ShopPageInfoVo shopPageInfoVo) {
 //        Page<Shop> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
+        List<ShopExistTableVo> shopExistTableVos = null;
+        ShopPageVo pageVo = null;
         Integer pageNum = (shopPageInfoVo.getPageNum() - 1) * shopPageInfoVo.getPageSize();
         // 总数据
-        Integer count = baseMapper.selectMyCount(shopPageInfoVo.getCategorySelect());
-        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopListAndCategoryName(pageNum, shopPageInfoVo.getPageSize(), shopPageInfoVo.getCategorySelect());
+        String total = "category:total_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
+        Integer count = null;
+        count = (Integer) redisTemplate.opsForValue().get(total);
+        if(count == null){
+            count = baseMapper.selectMyCount(shopPageInfoVo.getCategorySelect());
+            redisTemplate.opsForValue().set(total,count,1,TimeUnit.DAYS);
+        }
+
+        String shopPageInfo = "shop_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
+        shopExistTableVos = (List<ShopExistTableVo>) redisTemplate.opsForValue().get(shopPageInfo);
+        if(shopExistTableVos != null){
+            pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
+            return ResponseResult.okResult(pageVo);
+        }
+
+        shopExistTableVos = baseMapper.selectShopListAndCategoryName(pageNum, shopPageInfoVo.getPageSize(), shopPageInfoVo.getCategorySelect());
         shopExistTableVos.stream().map(item -> {
             String[] split = item.getImage().split(",");
             for (int i = 0; i < split.length; i++) {
@@ -183,7 +204,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             item.setImage(res);
             return item;
         }).collect(Collectors.toList());
-        ShopPageVo pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
+        // 设置半个小时的缓存
+        redisTemplate.opsForValue().set(shopPageInfo,shopExistTableVos,1, TimeUnit.DAYS);
+        pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
         return ResponseResult.okResult(pageVo);
     }
 

@@ -6,6 +6,7 @@ Vue.use(Router);
 /* Layout */
 import Layout from "@/layout";
 
+
 /**
  * Note: sub-menu only appear when route children.length >= 1
  * Detail see: https://panjiachen.github.io/vue-element-admin-site/guide/essentials/router-and-nav.html
@@ -166,6 +167,7 @@ export const constantRoutes = [
   { path: "*", redirect: "/404", hidden: true },
 ];
 
+
 const createRouter = () =>
   new Router({
     // mode: 'history', // require service support
@@ -175,6 +177,13 @@ const createRouter = () =>
 
 const router = createRouter();
 
+router.beforeEach((to, from, next) => {
+  // 在跳转前判断页面是否有缓存，如果有则清除
+  if (to.meta.clearCache) {
+    sessionStorage.clear()
+  }
+  next()
+})
 // Detail see: https://github.com/vuejs/vue-router/issues/1234#issuecomment-357941465
 export function resetRouter() {
   const newRouter = createRouter();

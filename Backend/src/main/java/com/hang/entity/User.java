@@ -28,8 +28,6 @@ public class User  {
     private String email;
     //密码
     private String password;
-    //1:用户 0管理员
-    private Integer status;
     //用户头像
     private String image;
     //性别 0:女 1:男

@@ -16,9 +16,12 @@ import com.hang.utils.BeanCopyUtils;
 import com.hang.vo.CategoryPageVo;
 import com.hang.vo.CategoryVo;
 import com.hang.vo.ShopExistTableVo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +33,8 @@ import java.util.stream.Collectors;
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
 
+    @Autowired
+    private RedisTemplate redisTemplate;
     @Override
     public ResponseResult toVoList() {
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
@@ -76,12 +81,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Override
     public ResponseResult queryPage(PageDto pageDto) {
+        List<Category> records = null;
+
+
         Page<Category> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         // 排序
         queryWrapper.orderByAsc(Category::getSort);
         page(page, queryWrapper);
-        List<Category> records = page.getRecords();
+        records = page.getRecords();
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(records, CategoryVo.class);
         long total = page.getTotal();
         CategoryPageVo pageVo = new CategoryPageVo(categoryVos, total);
@@ -120,10 +128,18 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Override
     public ResponseResult listWithTotal() {
+        CategoryPageVo pageVo = null;
+        String categoryInfo = "category:all_list";
+        pageVo = (CategoryPageVo)redisTemplate.opsForValue().get(categoryInfo);
+
+        if(pageVo != null){
+            return ResponseResult.okResult(pageVo);
+        }
         List<Category> list = list(null);
         Integer total = list.size();
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(list, CategoryVo.class);
-        CategoryPageVo pageVo = new CategoryPageVo(categoryVos, total.longValue());
+        pageVo = new CategoryPageVo(categoryVos, total.longValue());
+        redisTemplate.opsForValue().set(categoryInfo,pageVo,1, TimeUnit.DAYS);
         return ResponseResult.okResult(pageVo);
     }
 

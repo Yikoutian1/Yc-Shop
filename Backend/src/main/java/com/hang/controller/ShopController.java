@@ -2,24 +2,17 @@ package com.hang.controller;
 
 
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.hang.dto.PageDto;
 import com.hang.dto.ShopDto;
 import com.hang.dto.ShopInfoVo;
 import com.hang.dto.ShopPageInfoVo;
-import com.hang.entity.Shop;
 import com.hang.mapper.ShopMapper;
 import com.hang.result.ResponseResult;
 import com.hang.service.ShopService;
-import com.hang.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.annotation.WebServlet;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 /**
  * (Shop)表控制层
@@ -82,5 +75,6 @@ public class ShopController{
     public ResponseResult selectShopByCategory(@RequestParam("id") Long id){
         return shopService.selectShopByCategoryId(id);
     }
+
 }
 

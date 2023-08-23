@@ -9,7 +9,7 @@
       label-position="left"
     >
       <div class="title-container">
-        <h3 class="title">Login Form</h3>
+        <h3 class="title">后台登录</h3>
       </div>
 
       <el-form-item prop="username">
@@ -57,30 +57,30 @@
         >Login</el-button
       >
 
-      <div class="tips">
+      <!-- <div class="tips">
         <span style="margin-right: 20px">username: admin</span>
         <span> password: any</span>
-      </div>
+      </div> -->
     </el-form>
   </div>
 </template>
 
 <script>
 import { validUsername } from "@/utils/validate";
-
+import { login } from "@/api/user";
 export default {
   name: "Login",
   data() {
     const validateUsername = (rule, value, callback) => {
       if (value.length < 5) {
-        callback(new Error("Please enter the correct user name"));
+        callback(new Error("请输入正确的用户名"));
       } else {
         callback();
       }
     };
     const validatePassword = (rule, value, callback) => {
       if (value.length < 6) {
-        callback(new Error("The password can not be less than 6 digits"));
+        callback(new Error("密码不能少于6位"));
       } else {
         callback();
       }
@@ -123,20 +123,27 @@ export default {
       });
     },
     handleLogin() {
-      this.$refs.loginForm.validate((valid) => {
+      this.$refs.loginForm.validate(async (valid) => {
         if (valid) {
           this.loading = true;
-          this.$store
+          await this.$store
             .dispatch("user/login", this.loginForm)
             .then(() => {
+              this.$message({
+                message: "登录成功",
+                type: "success",
+              });
               this.$router.push({ path: this.redirect || "/" });
               this.loading = false;
             })
             .catch(() => {
+              this.$message({
+                message: "用户名或密码错误",
+                type: "error",
+              });
               this.loading = false;
             });
         } else {
-          console.log("error submit!!");
           return false;
         }
       });
@@ -172,9 +179,9 @@ $cursor: #fff;
       -webkit-appearance: none;
       border-radius: 0px;
       padding: 12px 5px 12px 15px;
-      color: $light_gray;
+      color: $bg;
       height: 47px;
-      caret-color: $cursor;
+      caret-color: $light_gray;
 
       &:-webkit-autofill {
         box-shadow: 0 0 0px 1000px $bg inset !important;
@@ -187,15 +194,15 @@ $cursor: #fff;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(0, 0, 0, 0.1);
     border-radius: 5px;
-    color: #454545;
+    color: #1b1b1b;
   }
 }
 </style>
 
 <style lang="scss" scoped>
-$bg: #2d3a4b;
-$dark_gray: #889aa4;
-$light_gray: #eee;
+$bg: #e7e7e7;
+$dark_gray: #000000;
+$light_gray: #000000;
 
 .login-container {
   min-height: 100%;

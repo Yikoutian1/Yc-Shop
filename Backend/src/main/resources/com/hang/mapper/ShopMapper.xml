@@ -66,7 +66,7 @@
         FROM shop s
                  LEFT JOIN shop_category sc ON s.id = sc.shop_id
                  LEFT JOIN category c ON c.id = sc.category_id
-        where category_id = #{id}
+        where sc.category_id = #{id}
         ORDER BY s.id
         LIMIT #{pageNum},#{pageSize}
     </select>

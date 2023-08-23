@@ -44,7 +44,7 @@
           <el-popover placement="right" trigger="hover">
             <img
               :src="scope.row.image"
-              style="max-width: 400px; max-height: 400px"
+              style="max-width: 250px; max-height: 250px"
             />
             <img
               slot="reference"
