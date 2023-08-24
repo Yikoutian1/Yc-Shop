@@ -1,7 +1,9 @@
 package com.hang.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hang.dto.UserDto;
 import com.hang.entity.User;
+import com.hang.result.ResponseResult;
 
 
 /**
@@ -12,5 +14,8 @@ import com.hang.entity.User;
  */
 public interface UserService extends IService<User> {
 
+    ResponseResult addUser(UserDto userDto);
+
+    ResponseResult sendMsg(String email);
 }
 
