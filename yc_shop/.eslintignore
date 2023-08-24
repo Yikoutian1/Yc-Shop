@@ -1,9 +1,0 @@
-// eslint-disable-next-line
-/* eslint-disable */
-eslint-disable-next-line
-eslint-disable-next-line
-
-build/*.js
-src/assets
-public
-dist
