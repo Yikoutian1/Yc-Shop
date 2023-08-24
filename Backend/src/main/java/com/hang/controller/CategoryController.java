@@ -11,8 +11,7 @@ import com.hang.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.annotation.WebServlet;
-import java.util.List;
+
 
 /**
  * (Category)表控制层
