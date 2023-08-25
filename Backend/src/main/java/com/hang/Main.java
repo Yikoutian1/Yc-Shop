@@ -25,7 +25,7 @@ public class Main {
 
     @Test
     public void testRemoveRedisKey(){
-        String key = "shop";
+        String key = "Comment";
         Collection<String> keys = redisCache.keys("*");
         keys.forEach(item->{
             if(item.contains(key)){
