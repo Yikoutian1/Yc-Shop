@@ -32,7 +32,7 @@ public class CommentController{
      * @return 评论树
      */
     @GetMapping("/queryCommentList")
-    public ResponseResult queryCommentList(Integer pageNum,Integer pageSize,Long shopId){
+    public ResponseResult queryCommentList(@RequestParam("pageNum") Integer pageNum,@RequestParam("pageSize")Integer pageSize,@RequestParam("shopId")Long shopId){
         return commentService.queryCommentList(pageNum,pageSize,shopId);
     }
 }

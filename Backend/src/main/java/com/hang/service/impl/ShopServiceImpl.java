@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hang.dto.*;
+import com.hang.emuns.StatusEnum;
 import com.hang.entity.Category;
 import com.hang.entity.Shop;
 import com.hang.mapper.ShopMapper;
@@ -14,6 +15,7 @@ import com.hang.utils.BeanCopyUtils;
 import com.hang.utils.RedisCache;
 import com.hang.vo.*;
 import io.swagger.models.auth.In;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -24,6 +26,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
  * @since 2023-08-17 19:27:37
  */
 @Service("shopService")
+@Slf4j
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements ShopService {
     private final static String BaseImageUrl = "http://rzl9bicnx.hn-bkt.clouddn.com/";
     @Autowired
@@ -46,6 +50,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     private CategoryService categoryService;
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public ResponseResult addShopInfo(ShopInfoVo shopInfoVo) {
@@ -64,6 +70,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             // 商品 分类表
             baseMapper.insertIntoShopCategory(shopInfoVo, id);
             dataSourceTransactionManager.commit(transactionStatus);// 手动commit
+            delShopAndCategoryAndTotal();
             return ResponseResult.okResult();
         } catch (Exception e) {
             dataSourceTransactionManager.rollback(transactionStatus);
@@ -74,7 +81,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Override
     public ResponseResult delShopBatchByIds(List<Long> ids) {
         LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Shop::getStatus, 1) // 1:在售  0:未售卖
+        queryWrapper.eq(Shop::getStatus, StatusEnum.SHOP_BUYING) // 1:在售  0:未售卖
                 .in(Shop::getId, ids);
         Integer count = baseMapper.selectCount(queryWrapper);
         if (count > 0) {
@@ -82,6 +89,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         } else {
             // 可以删除
             baseMapper.deleteBatchIds(ids);
+            delShopAndCategoryAndTotal();
             return ResponseResult.okResult();
         }
 
@@ -92,6 +100,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         Integer status = shopDto.getStatus();
         List<Long> ids = shopDto.getIds();
         baseMapper.updateStatusBatch(status, ids);
+        delShopAndCategoryAndTotal();
         return ResponseResult.okResult();
     }
 
@@ -108,6 +117,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         ShopCategoryPageVo pageVo = new ShopCategoryPageVo(shopExistTableVos,count);
         return ResponseResult.okResult(pageVo);
     }
+
 
     @Override
     public ResponseResult updateShopById(ShopInfoVo shopInfoVo) {
@@ -126,6 +136,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             // 修改分类商品表
             baseMapper.updateShopCategoryInfo(shop.getId(), categoryId);
             dataSourceTransactionManager.commit(transactionStatus);// 手动commit
+            delShopAndCategoryAndTotal();
             return ResponseResult.okResult();
         } catch (Exception e) {
             dataSourceTransactionManager.rollback(transactionStatus);
@@ -136,7 +147,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Override
     public ResponseResult getShopList() {
         LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Shop::getDelFlag, 0);// 0起售
+        queryWrapper.eq(Shop::getDelFlag, StatusEnum.SHOP_STATUS_NORMAL);// 0起售
         List<Shop> list = list(queryWrapper);
         list.stream().map(item -> {
             String[] split = item.getImage().split(",");
@@ -179,7 +190,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         ShopPageVo pageVo = null;
         Integer pageNum = (shopPageInfoVo.getPageNum() - 1) * shopPageInfoVo.getPageSize();
         // 总数据
-        String total = "category:total_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
+        String total = "CategoryTotal:count_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
         Integer count = null;
         count = (Integer) redisTemplate.opsForValue().get(total);
         if(count == null){
@@ -187,7 +198,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             redisTemplate.opsForValue().set(total,count,1,TimeUnit.DAYS);
         }
 
-        String shopPageInfo = "shop_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
+        String shopPageInfo = "Shop:list_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
         shopExistTableVos = (List<ShopExistTableVo>) redisTemplate.opsForValue().get(shopPageInfo);
         if(shopExistTableVos != null){
             pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
@@ -209,7 +220,23 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
         return ResponseResult.okResult(pageVo);
     }
-
+    /**
+     * 前台筛选排序
+     * @param shopSortDto
+     * @return
+     */
+    @Override
+    public ResponseResult sortShop(ShopSortDto shopSortDto) {
+        if(shopSortDto.getPageNum()==null){
+            shopSortDto.setPageNum(1);
+        }
+        if (shopSortDto.getPageSize()==null){
+            shopSortDto.setPageSize(20);
+        }
+        Integer pageNum = (shopSortDto.getPageNum() - 1) * shopSortDto.getPageSize();
+        List<ShopExistTableVo> shopExistTableVos = baseMapper.sortShop(pageNum,shopSortDto.getPageSize(),shopSortDto);
+        return ResponseResult.okResult(shopExistTableVos);
+    }
     @Override
     public ResponseResult queryShopById(Long id) {
         List<String> imagess = new ArrayList<>();
@@ -242,6 +269,28 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         return ResponseResult.okResult(shopExistTableVo);
     }
 
+    private void delShopAndCategoryAndTotal(){
+        String key1 = "Category";
+        String key2 = "CategoryTotal";
+        String []keys = new String[]{
+                "Category",
+                "CategoryTotal",
+                "Shop"
+        };
+        for (String key : keys) {
+            delKey(key);
+        }
+    }
+    private void delKey(String key){
+        log.info("Redis Key(key:{}) 开始删除",key);
+        Collection<String> keys = redisCache.keys("*");
+        keys.forEach(item->{
+            if(item.contains(key)){
+                redisCache.deleteObject(item);
+            }
+        });
+        log.info("key:{} 删除成功",key);
+    }
 
     private List<ShopVo> transArray(List<Shop> list) {
         list.stream().map(item -> {

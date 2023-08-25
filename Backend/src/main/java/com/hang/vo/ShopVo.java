@@ -26,6 +26,8 @@ public class ShopVo {
     private Double price;
     //商品照片
     private String image;
+
+    private Float star;
     //商品描述
     private String describle;
     //商品库存

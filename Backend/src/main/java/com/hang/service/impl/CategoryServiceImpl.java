@@ -13,13 +13,16 @@ import com.hang.mapper.CategoryMapper;
 import com.hang.result.ResponseResult;
 import com.hang.service.CategoryService;
 import com.hang.utils.BeanCopyUtils;
+import com.hang.utils.RedisCache;
 import com.hang.vo.CategoryPageVo;
 import com.hang.vo.CategoryVo;
 import com.hang.vo.ShopExistTableVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -31,10 +34,13 @@ import java.util.stream.Collectors;
  * @since 2023-08-15 21:09:28
  */
 @Service("categoryService")
+@Slf4j
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
 
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private RedisCache redisCache;
     @Override
     public ResponseResult toVoList() {
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
@@ -61,6 +67,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Category::getId, category.getId());
         update(category, queryWrapper);
+        delCategoryAndTotal();
         return ResponseResult.okResult();
     }
 
@@ -83,7 +90,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public ResponseResult queryPage(PageDto pageDto) {
         List<Category> records = null;
 
-
         Page<Category> page = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         // 排序
@@ -102,6 +108,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         List<Long> ids = categoryUpdateDto.getIds();
 //        System.out.println(categoryUpdateDto);
         baseMapper.updateStatusBatch(status, ids);
+        delCategoryAndTotal();
         return ResponseResult.okResult();
     }
 
@@ -115,6 +122,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         }
         // 如果没有 则可以删除
         baseMapper.deleteBatchIds(ids);
+        delCategoryAndTotal();
         return ResponseResult.okResult();
     }
 
@@ -122,6 +130,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public ResponseResult addCategory(CategoryDto categoryDto) {
         Category category = BeanCopyUtils.copyBean(categoryDto, Category.class);
         boolean flag = save(category);
+        delCategoryAndTotal();
         return flag ? ResponseResult.okResult() : ResponseResult.errorResult(201, "新增失败");
 
     }
@@ -129,9 +138,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     @Override
     public ResponseResult listWithTotal() {
         CategoryPageVo pageVo = null;
-        String categoryInfo = "category:all_list";
-        pageVo = (CategoryPageVo)redisTemplate.opsForValue().get(categoryInfo);
-
+        String categoryInfo = "Category:all_list";
+        pageVo = redisCache.getCacheObject(categoryInfo);
         if(pageVo != null){
             return ResponseResult.okResult(pageVo);
         }
@@ -139,7 +147,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         Integer total = list.size();
         List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(list, CategoryVo.class);
         pageVo = new CategoryPageVo(categoryVos, total.longValue());
-        redisTemplate.opsForValue().set(categoryInfo,pageVo,1, TimeUnit.DAYS);
+        redisCache.setCacheObject(categoryInfo,pageVo);
+        redisCache.expire(categoryInfo,1, TimeUnit.DAYS);
         return ResponseResult.okResult(pageVo);
     }
 
@@ -179,6 +188,26 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         queryWrapper.eq(Category::getId,id);
         Category one = getOne(queryWrapper);
         return ResponseResult.okResult(one.getName());
+    }
+
+    /**
+     * 删除分类列表和total
+     */
+    private void delCategoryAndTotal(){
+        String key1 = "Category";
+        String key2 = "CategoryTotal";
+        delKey(key1);
+        delKey(key2);
+    }
+    private void delKey(String key){
+        log.info("Redis Key(key:{}) 开始删除",key);
+        Collection<String> keys = redisCache.keys("*");
+        keys.forEach(item->{
+            if(item.contains(key)){
+                redisCache.deleteObject(item);
+            }
+        });
+        log.info("key:{} 删除成功",key);
     }
 }
 

@@ -3,6 +3,7 @@ package com.hang.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hang.emuns.StatusEnum;
 import com.hang.entity.Comment;
 import com.hang.mapper.CommentMapper;
 import com.hang.result.ResponseResult;
@@ -12,9 +13,11 @@ import com.hang.utils.BeanCopyUtils;
 import com.hang.vo.CommentVo;
 import com.hang.vo.PageVo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * (Comment)表服务实现类
@@ -26,25 +29,34 @@ import java.util.List;
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Override
     public ResponseResult queryCommentList(Integer pageNum, Integer pageSize, Long shopId) {
+        List<CommentVo> commentVoList = null;
         LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
         // 查询商品
         queryWrapper.eq(Comment::getShopId, shopId)
                 // 查询商品的根评论 rootId为-1
-                .eq(Comment::getRootId, -1);
+                .eq(Comment::getRootId, StatusEnum.ROOT_COMMENT);
         Page<Comment> page = new Page<>(pageNum, pageSize);
         page(page, queryWrapper);
-        List<CommentVo> commentVoList = toCommentVoList(page.getRecords());
+
+        String shopCommentList = "Comment:ShopCommentList_"+shopId+"_"+pageNum+"_"+pageSize;
+        commentVoList = (List<CommentVo>)redisTemplate.opsForValue().get(shopCommentList);
+        if(commentVoList!=null){
+            return ResponseResult.okResult(new PageVo(commentVoList, page.getTotal()));
+        }
+        commentVoList = toCommentVoList(page.getRecords());
         // 查询根评论对应的子评论集合,赋值给对应的属性(children)
         for (CommentVo vo : commentVoList) {
             Long id = vo.getId();
             List<CommentVo> children = getChildren(id);
             vo.setChildren(children);
-
         }
-        return ResponseResult.okResult(new PageVo(commentVoList,page.getTotal()));
+        redisTemplate.opsForValue().set(shopCommentList,commentVoList,1, TimeUnit.DAYS);
+        return ResponseResult.okResult(new PageVo(commentVoList, page.getTotal()));
     }
 
     /**
@@ -70,15 +82,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         }
         return commentVos;
     }
+
     /**
      * 查询根评论下面的子评论
+     *
      * @param rootId 根据 根id
      * @return
      */
-    private List<CommentVo> getChildren(Long rootId){
+    private List<CommentVo> getChildren(Long rootId) {
         // 如果评论过多需要考虑分页,现在不考虑
         LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Comment::getRootId,rootId)
+        queryWrapper.eq(Comment::getRootId, rootId)
                 .orderByAsc(Comment::getCreateTime);
         List<Comment> list = list(queryWrapper);
         // 直接调用之前封装的方法

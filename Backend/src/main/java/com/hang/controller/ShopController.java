@@ -5,6 +5,7 @@ package com.hang.controller;
 import com.hang.dto.ShopDto;
 import com.hang.dto.ShopInfoVo;
 import com.hang.dto.ShopPageInfoVo;
+import com.hang.dto.ShopSortDto;
 import com.hang.mapper.ShopMapper;
 import com.hang.result.ResponseResult;
 import com.hang.service.ShopService;
@@ -28,11 +29,16 @@ public class ShopController{
     private ShopService shopService;
     @Autowired
     private ShopMapper shopMapper;
+    @PostMapping("/sortShop")
+    public ResponseResult sortShop(@RequestBody ShopSortDto shopSortDto){
+        return shopService.sortShop(shopSortDto);
+    }
 
     @PostMapping("/addShopInfo")
     public ResponseResult addShopInfo(@RequestBody ShopInfoVo shopInfoVo){
         return shopService.addShopInfo(shopInfoVo);
     }
+
     @GetMapping("/getShopList")
     public ResponseResult getShopList(){
         return shopService.getShopList();
@@ -55,11 +61,11 @@ public class ShopController{
     public ResponseResult searchByName(@RequestParam("name") String name){
         return shopService.searchByName(name);
     }
-    @GetMapping("getImgById")
+    @GetMapping("/getImgById")
     public ResponseResult getImgById(@RequestParam("id") Long id){
         return ResponseResult.okResult(shopMapper.getImgById(id));
     }
-    @PostMapping("saveShop")
+    @PostMapping("/saveShop")
     public ResponseResult saveShop(@RequestBody ShopInfoVo shopInfoVo){
         return shopService.updateShopById(shopInfoVo);
     }

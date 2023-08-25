@@ -25,6 +25,7 @@ public class ShopExistTableVo {
     private Double price;
     //商品销量
     private Long sales;
+    private Float star;
     //商品照片
     private String image;
     //商品库存

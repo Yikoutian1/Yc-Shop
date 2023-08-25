@@ -41,21 +41,33 @@ spring:
     username: 485544150@qq.com
     #配置密码,注意不是真正的密码，而是刚刚申请到的授权码
     password: pdcwpuxqdztgcbah
-    #端口号465或587
-    port: 465
     #默认的邮件编码为UTF-8
     default-encoding: UTF-8
+    port: 465
     #其他参数
     properties:
-      mail:
-        #配置SSL 加密工厂
-        smtp:
-          ssl:
-            #本地测试，先放开ssl
-            enable: true
-            required: false
-          #开启debug模式，这样邮件发送过程的日志会在控制台打印出来，方便排查错误
-        debug: true
+      mail.smtp.ssl.trust: smtp.qq.com
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.socketFactory.fallback: true
+      mail.smtp.socketFactory.class: javax.net.ssl.SSLSocketFactory
+      mail.smtp.socketFactory.port: 465
+#      mail:
+#        #配置SSL 加密工厂
+#        smtp:
+#          ssl:
+#            trust: smtp.qq.com
+#          auth: true
+#          starttls:
+#            enable: true
+#            required: true
+#          socketFactory:
+#            fallback: true
+#            class: javax.net.ssl.SSLSocketFactory
+#            port: 465
+#          #开启debug模式，这样邮件发送过程的日志会在控制台打印出来，方便排查错误
+#        debug: true
 mybatis-plus:
   configuration:
     # 日志
