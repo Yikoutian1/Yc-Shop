@@ -128,4 +128,10 @@
 
         LIMIT #{pageNum},#{pageSize}
     </select>
+    <select id="avgStar" resultType="java.lang.Float">
+        SELECT ROUND(AVG(c.star), 2)
+        FROM shop s
+           INNER JOIN `comment` c ON s.id = c.`shop_id`
+           where c.`shop_id` = #{shopId}
+    </select>
 </mapper>

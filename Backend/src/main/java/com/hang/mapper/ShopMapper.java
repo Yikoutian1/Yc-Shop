@@ -35,5 +35,7 @@ public interface ShopMapper extends BaseMapper<Shop> {
     Integer selectMyCount(@Param("category_id") String categorySelect);
 
     List<ShopExistTableVo> sortShop(@Param("pageNum") Integer pageNum,@Param("pageSize") Integer pageSize, @Param("dto") ShopSortDto shopSortDto);
+
+    float avgStar(@Param("shopId") Long id);
 }
 

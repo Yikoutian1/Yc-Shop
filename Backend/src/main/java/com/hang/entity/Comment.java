@@ -30,7 +30,7 @@ public class Comment  {
     //默认-1代表根评论，非-1则此处填用户id
     private Long rootId;
     //评论星级
-    private Integer star;
+    private Float star;
     //评论文字部分
     private String content;
     //照片列表

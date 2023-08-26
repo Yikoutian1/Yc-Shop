@@ -241,12 +241,15 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     public ResponseResult queryShopById(Long id) {
         List<String> imagess = new ArrayList<>();
         Shop item = getById(id);
+        // 需要查询该商品所有的评分平均
+        float avg = baseMapper.avgStar(id);
         String[] split = item.getImage().split(",");
         for (String s : split) {
             s = BaseImageUrl + s;
             imagess.add(s);
         }
         ShopVo shopVo = BeanCopyUtils.copyBean(item, ShopVo.class);
+        shopVo.setStar(avg);
         shopVo.setImages(imagess);
         return ResponseResult.okResult(shopVo);
     }

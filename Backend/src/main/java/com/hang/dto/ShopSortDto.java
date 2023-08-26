@@ -23,8 +23,8 @@ public class ShopSortDto {
     // 分类id
     private Long categoryId;
     // 价格区间
-    private double start;
-    private double end;
+    private Double start;
+    private Double end;
     // 通过销量
     private Integer sort;
 

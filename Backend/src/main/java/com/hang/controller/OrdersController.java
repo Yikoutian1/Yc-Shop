@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/orders")
-public class OrderController{
+public class OrdersController{
     @Autowired
     private OrdersService ordersService;
     @GetMapping("/getAllOrder")
