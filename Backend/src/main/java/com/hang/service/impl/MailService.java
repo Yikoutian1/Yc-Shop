@@ -8,6 +8,7 @@ package com.hang.service.impl;
  * @Version 1.0
  */
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import java.util.Date;
  * @author qzz
  */
 @Service
+@Slf4j
 public class MailService {
     private static final Logger logger = LoggerFactory.getLogger(MailService.class);
 
@@ -80,6 +82,7 @@ public class MailService {
 
             //发送邮件
             javaMailSender.send(mimeMessageHelper.getMimeMessage());
+
             System.out.println("发送邮件成功："+sendMailer+"->"+to);
 
         } catch (MessagingException e) {
