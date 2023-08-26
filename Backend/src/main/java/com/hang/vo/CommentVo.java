@@ -25,7 +25,7 @@ public class CommentVo {
     private Long uid;
     //评论的商品编号
     private Long shopId;
-    private Integer star;
+    private Float star;
     //默认-1代表根评论，非-1则此处填用户id
     private Long rootId;
     //评论文字部分

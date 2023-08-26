@@ -125,7 +125,6 @@
             </otherwise>
         </choose>
 
-
         LIMIT #{pageNum},#{pageSize}
     </select>
     <select id="avgStar" resultType="java.lang.Float">
@@ -133,5 +132,10 @@
         FROM shop s
            INNER JOIN `comment` c ON s.id = c.`shop_id`
            where c.`shop_id` = #{shopId}
+    </select>
+    <select id="hasComment" resultType="java.lang.Integer">
+        select count(*)
+        from comment
+        where shop_id = #{shop_id}
     </select>
 </mapper>

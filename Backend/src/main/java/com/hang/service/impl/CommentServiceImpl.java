@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hang.emuns.StatusEnum;
 import com.hang.entity.Comment;
 import com.hang.mapper.CommentMapper;
+import com.hang.mapper.ShopMapper;
 import com.hang.result.ResponseResult;
 import com.hang.service.CommentService;
 import com.hang.service.UserService;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * (Comment)表服务实现类
@@ -27,10 +29,13 @@ import java.util.concurrent.TimeUnit;
  */
 @Service("commentService")
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
+    private final static String BaseImageUrl = "http://rzl9bicnx.hn-bkt.clouddn.com/";
     @Autowired
     private UserService userService;
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private ShopMapper shopMapper;
 
     @Override
     public ResponseResult queryCommentList(Integer pageNum, Integer pageSize, Long shopId) {
@@ -43,19 +48,34 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         Page<Comment> page = new Page<>(pageNum, pageSize);
         page(page, queryWrapper);
 
-        String shopCommentList = "Comment:ShopCommentList_"+shopId+"_"+pageNum+"_"+pageSize;
-        commentVoList = (List<CommentVo>)redisTemplate.opsForValue().get(shopCommentList);
-        if(commentVoList!=null){
+        String shopCommentList = "Comment:ShopCommentList_" + shopId + "_" + pageNum + "_" + pageSize;
+        commentVoList = (List<CommentVo>) redisTemplate.opsForValue().get(shopCommentList);
+        if (commentVoList != null) {
             return ResponseResult.okResult(new PageVo(commentVoList, page.getTotal()));
         }
         commentVoList = toCommentVoList(page.getRecords());
         // 查询根评论对应的子评论集合,赋值给对应的属性(children)
         for (CommentVo vo : commentVoList) {
+            // 处理照片
+            String images = vo.getImages();
+            String[] split = images.split(",");
+            for (int i = 0; i < split.length; i++) {
+                split[i] = BaseImageUrl + split[i];
+            }
+            String res = String.join(",", split);
+            // 设置前缀 父级
+            vo.setImages(res);
+
             Long id = vo.getId();
+            // 如果有评论,则取平均
+            Integer integer = shopMapper.hasComment(id);
+            if (integer > 0) {
+                vo.setStar(shopMapper.avgStar(id));
+            }
             List<CommentVo> children = getChildren(id);
             vo.setChildren(children);
         }
-        redisTemplate.opsForValue().set(shopCommentList,commentVoList,1, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(shopCommentList, commentVoList, 1, TimeUnit.DAYS);
         return ResponseResult.okResult(new PageVo(commentVoList, page.getTotal()));
     }
 
@@ -95,6 +115,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         queryWrapper.eq(Comment::getRootId, rootId)
                 .orderByAsc(Comment::getCreateTime);
         List<Comment> list = list(queryWrapper);
+        list.stream().map(item->{
+            // 处理照片
+            String[] split = item.getImages().split(",");
+            for (int i = 0; i < split.length; i++) {
+                split[i] = BaseImageUrl + split[i];
+            }
+            String res = String.join(",", split);
+            // 设置前缀 子级
+            item.setImages(res);
+            return item;
+        }).collect(Collectors.toList());
         // 直接调用之前封装的方法
         List<CommentVo> commentVos = toCommentVoList(list);
         return commentVos;
