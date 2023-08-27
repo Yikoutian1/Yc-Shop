@@ -17,9 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * (Comment)表服务实现类
@@ -58,14 +58,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         for (CommentVo vo : commentVoList) {
             // 处理照片
             String images = vo.getImages();
-            String[] split = images.split(",");
-            for (int i = 0; i < split.length; i++) {
-                split[i] = BaseImageUrl + split[i];
+            List<String> ss = new ArrayList<>();
+            if (images != null) {
+                String[] split = images.split(",");
+                for (String s : split) {
+                    s = BaseImageUrl + s;
+                    ss.add(s);
+                }
+                // 设置前缀 父级
+                vo.setImagess(ss);
             }
-            String res = String.join(",", split);
-            // 设置前缀 父级
-            vo.setImages(res);
-
             Long id = vo.getId();
             // 如果有评论,则取平均
             Integer integer = shopMapper.hasComment(id);
@@ -115,19 +117,22 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         queryWrapper.eq(Comment::getRootId, rootId)
                 .orderByAsc(Comment::getCreateTime);
         List<Comment> list = list(queryWrapper);
-        list.stream().map(item->{
-            // 处理照片
-            String[] split = item.getImages().split(",");
-            for (int i = 0; i < split.length; i++) {
-                split[i] = BaseImageUrl + split[i];
-            }
-            String res = String.join(",", split);
-            // 设置前缀 子级
-            item.setImages(res);
-            return item;
-        }).collect(Collectors.toList());
         // 直接调用之前封装的方法
         List<CommentVo> commentVos = toCommentVoList(list);
+
+        commentVos.forEach(item -> {
+            List<String> imagess = new ArrayList<>();
+            String images = item.getImages();
+            // 如果照片不为空
+            if (images != null) {
+                String[] split = images.split(",");
+                for (String s : split) {
+                    s = BaseImageUrl + s;
+                    imagess.add(s);
+                }
+            }
+            item.setImagess(imagess);
+        });
         return commentVos;
     }
 }

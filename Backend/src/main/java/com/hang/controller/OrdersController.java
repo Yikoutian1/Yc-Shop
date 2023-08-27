@@ -1,7 +1,6 @@
 package com.hang.controller;
 
 
-
 import com.hang.result.ResponseResult;
 
 import com.hang.service.OrdersService;
@@ -16,12 +15,37 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/orders")
-public class OrdersController{
+public class OrdersController {
     @Autowired
     private OrdersService ordersService;
+
     @GetMapping("/getAllOrder")
-    public ResponseResult getAllOrder(){
-        return ResponseResult.okResult(ordersService.list());
+    public ResponseResult getAllOrder(@RequestParam("pageNum") Integer pageNum,
+                                      @RequestParam("pageSize") Integer pageSize,
+                                      @RequestParam("status") Integer status
+    ) {
+        return ordersService.allPageList(pageNum, pageSize, status);
     }
+
+    @GetMapping("/getOrderDetailInfo")
+    public ResponseResult getOrderDetailInfo() {
+        return ordersService.getOrderDetailInfo();
+    }
+
+    /**
+     * 搜索
+     * @param pageNum
+     * @param pageSize
+     * @param input
+     * @return
+     */
+    @GetMapping("/queryOrderList")
+    public ResponseResult queryOrderList(@RequestParam("pageNum") Integer pageNum,
+                                         @RequestParam("pageSize") Integer pageSize,
+                                         @RequestParam("input") Long input
+    ) {
+        return ordersService.queryOrderList(pageNum,pageSize,input);
+    }
+
 }
 

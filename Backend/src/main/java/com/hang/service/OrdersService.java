@@ -2,6 +2,7 @@ package com.hang.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hang.entity.Orders;
+import com.hang.result.ResponseResult;
 
 
 /**
@@ -12,5 +13,10 @@ import com.hang.entity.Orders;
  */
 public interface OrdersService extends IService<Orders> {
 
+    ResponseResult getOrderDetailInfo();
+
+    ResponseResult allPageList(Integer pageNum, Integer pageSize,Integer status);
+
+    ResponseResult queryOrderList(Integer pageNum, Integer pageSize, Long input);
 }
 

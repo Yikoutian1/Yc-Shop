@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hang.mapper.OrdersMapper">
+    <select id="getOrderDetailInfo" resultType="com.hang.vo.OrderDetailVo">
+        SELECT od.id ,
+               od.oid,
+               od.name,
+               od.price,
+               od.image,
+               od.num,
+               a.name as username,
+               a.phone,
+               a.address
+        FROM `order_detail` od
+                 LEFT JOIN `address` a ON od.uid = a.id
+        WHERE a.`default_address` = 1
+    </select>
+</mapper>

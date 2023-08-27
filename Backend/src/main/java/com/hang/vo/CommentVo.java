@@ -34,6 +34,6 @@ public class CommentVo {
     private String images;
 
     private Date createTime;
-
+    private List<String> imagess;
     private List<CommentVo> children;
 }
