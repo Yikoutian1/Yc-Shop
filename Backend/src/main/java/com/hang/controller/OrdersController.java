@@ -31,7 +31,6 @@ public class OrdersController {
     public ResponseResult getOrderDetailInfo() {
         return ordersService.getOrderDetailInfo();
     }
-
     /**
      * 搜索
      * @param pageNum
@@ -46,6 +45,10 @@ public class OrdersController {
     ) {
         return ordersService.queryOrderList(pageNum,pageSize,input);
     }
-
+    @GetMapping("/changStatus")
+    public ResponseResult changStatus(@RequestParam("status") Integer status,
+                                      @RequestParam("id") Long id){
+        return ordersService.changStatus(status,id);
+    }
 }
 

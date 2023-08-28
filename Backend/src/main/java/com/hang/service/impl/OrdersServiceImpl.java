@@ -47,8 +47,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         Page<Orders> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(input != null, Orders::getOid, input);
-        page(page,queryWrapper);
+        page(page, queryWrapper);
         List<Orders> records = page.getRecords();
-        return ResponseResult.okResult(new PageVo(records,page.getTotal()));
+        return ResponseResult.okResult(new PageVo(records, page.getTotal()));
+    }
+
+    @Override
+    public ResponseResult changStatus(Integer status, Long id) {
+        boolean flag = ordersMapper.changStatus(status, id);
+        return flag ? ResponseResult.okResult() : ResponseResult.errorResult(201, "更新失败");
     }
 }

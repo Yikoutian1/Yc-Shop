@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hang.entity.Orders;
 import com.hang.vo.OrderDetailVo;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -18,5 +19,7 @@ import java.util.List;
 public interface OrdersMapper extends BaseMapper<Orders> {
 
     List<OrderDetailVo> getOrderDetailInfo();
+
+    boolean changStatus(@Param("status") Integer status,@Param("id") Long id);
 }
 

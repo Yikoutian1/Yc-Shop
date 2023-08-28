@@ -112,9 +112,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
      */
     @Override
     public ResponseResult selectShopByCategoryId(Long id) {
-        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopByCategoryId(id,0,20);
+        List<ShopExistTableVo> shopExistTableVos = baseMapper.selectShopByCategoryId(id, 0, 20);
         Integer count = baseMapper.selectMyCount(String.valueOf(id));
-        ShopCategoryPageVo pageVo = new ShopCategoryPageVo(shopExistTableVos,count);
+        ShopCategoryPageVo pageVo = new ShopCategoryPageVo(shopExistTableVos, count);
         return ResponseResult.okResult(pageVo);
     }
 
@@ -190,17 +190,17 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         ShopPageVo pageVo = null;
         Integer pageNum = (shopPageInfoVo.getPageNum() - 1) * shopPageInfoVo.getPageSize();
         // 总数据
-        String total = "CategoryTotal:count_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
+        String total = "CategoryTotal:count_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" + shopPageInfoVo.getCategorySelect();
         Integer count = null;
         count = (Integer) redisTemplate.opsForValue().get(total);
-        if(count == null){
+        if (count == null) {
             count = baseMapper.selectMyCount(shopPageInfoVo.getCategorySelect());
-            redisTemplate.opsForValue().set(total,count,1,TimeUnit.DAYS);
+            redisTemplate.opsForValue().set(total, count, 1, TimeUnit.DAYS);
         }
 
-        String shopPageInfo = "Shop:list_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" +shopPageInfoVo.getCategorySelect();
+        String shopPageInfo = "Shop:list_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" + shopPageInfoVo.getCategorySelect();
         shopExistTableVos = (List<ShopExistTableVo>) redisTemplate.opsForValue().get(shopPageInfo);
-        if(shopExistTableVos != null){
+        if (shopExistTableVos != null) {
             pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
             return ResponseResult.okResult(pageVo);
         }
@@ -216,27 +216,31 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             return item;
         }).collect(Collectors.toList());
         // 设置半个小时的缓存
-        redisTemplate.opsForValue().set(shopPageInfo,shopExistTableVos,1, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(shopPageInfo, shopExistTableVos, 1, TimeUnit.DAYS);
         pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
         return ResponseResult.okResult(pageVo);
     }
+
     /**
      * 前台筛选排序
+     *
      * @param shopSortDto
      * @return
      */
     @Override
     public ResponseResult sortShop(ShopSortDto shopSortDto) {
-        if(shopSortDto.getPageNum()==null){
+        if (shopSortDto.getPageNum() == null) {
             shopSortDto.setPageNum(1);
         }
-        if (shopSortDto.getPageSize()==null){
+        if (shopSortDto.getPageSize() == null) {
             shopSortDto.setPageSize(20);
         }
         Integer pageNum = (shopSortDto.getPageNum() - 1) * shopSortDto.getPageSize();
-        List<ShopExistTableVo> shopExistTableVos = baseMapper.sortShop(pageNum,shopSortDto.getPageSize(),shopSortDto);
-        return ResponseResult.okResult(shopExistTableVos);
+        List<ShopExistTableVo> shopExistTableVos = baseMapper.sortShop(pageNum, shopSortDto.getPageSize(), shopSortDto);
+        Integer size = shopExistTableVos.size();
+        return ResponseResult.okResult(new PageVo(shopExistTableVos,size.longValue()));
     }
+
     @Override
     public ResponseResult queryShopById(Long id) {
         List<String> imagess = new ArrayList<>();
@@ -252,7 +256,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         ShopVo shopVo = BeanCopyUtils.copyBean(item, ShopVo.class);
         Float avg = 5.00F;
         // 如果有评论
-        if(hasComment>0){
+        if (hasComment > 0) {
             // 需要查询该商品所有的评分平均
             avg = baseMapper.avgStar(id);
         }
@@ -264,8 +268,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Override
     public ResponseResult searchByName(String name) {
         LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(Shop::getName, name);
-        List<Shop> shopList = list(queryWrapper);
+        queryWrapper.like(name != null, Shop::getName, name);
+        Page<Shop> page = new Page<>();
+        page(page, queryWrapper);
+        List<Shop> shopList = page.getRecords();
         shopList.stream().map(item -> {
             String[] split = item.getImage().split(",");
             for (int i = 0; i < split.length; i++) {
@@ -276,13 +282,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             return item;
         }).collect(Collectors.toList());
         List<ShopExistTableVo> shopExistTableVo = categoryService.getCategoryNameList(shopList);
-        return ResponseResult.okResult(shopExistTableVo);
+        return ResponseResult.okResult(new PageVo(shopExistTableVo, page.getTotal()));
     }
 
-    private void delShopAndCategoryAndTotal(){
+    private void delShopAndCategoryAndTotal() {
         String key1 = "Category";
         String key2 = "CategoryTotal";
-        String []keys = new String[]{
+        String[] keys = new String[]{
                 "Category",
                 "CategoryTotal",
                 "Shop"
@@ -291,15 +297,16 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             delKey(key);
         }
     }
-    private void delKey(String key){
-        log.info("Redis Key(key:{}) 开始删除",key);
+
+    private void delKey(String key) {
+        log.info("Redis Key(key:{}) 开始删除", key);
         Collection<String> keys = redisCache.keys("*");
-        keys.forEach(item->{
-            if(item.contains(key)){
+        keys.forEach(item -> {
+            if (item.contains(key)) {
                 redisCache.deleteObject(item);
             }
         });
-        log.info("key:{} 删除成功",key);
+        log.info("key:{} 删除成功", key);
     }
 
     private List<ShopVo> transArray(List<Shop> list) {

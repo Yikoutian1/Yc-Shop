@@ -5,6 +5,7 @@ package com.hang.controller;
 import com.hang.entity.Admin;
 import com.hang.result.ResponseResult;
 import com.hang.service.AdminService;
+import com.hang.utils.JwtHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,10 +38,14 @@ public class AdminController{
      * @return
      */
     @GetMapping("/info")
-    public ResponseResult info() {
+    public ResponseResult info(HttpServletRequest request) {
+        // 获取请求头token字符串
+        String token = request.getHeader("token");
+        // 从token获取用户名称(username)
+        String username = JwtHelper.getUsername(token);
         Map<String, Object> map = new HashMap<>();
-        map.put("roles","[admin]");
-        map.put("name","admin");
+        map.put("roles","["+username+"]");
+        map.put("name",username);
         map.put("avatar","https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
         return ResponseResult.okResult(map);
     }

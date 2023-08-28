@@ -18,5 +18,7 @@ public interface OrdersService extends IService<Orders> {
     ResponseResult allPageList(Integer pageNum, Integer pageSize,Integer status);
 
     ResponseResult queryOrderList(Integer pageNum, Integer pageSize, Long input);
+
+    ResponseResult changStatus(Integer status, Long id);
 }
 
