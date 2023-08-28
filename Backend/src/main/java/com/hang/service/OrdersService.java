@@ -20,5 +20,7 @@ public interface OrdersService extends IService<Orders> {
     ResponseResult queryOrderList(Integer pageNum, Integer pageSize, Long input);
 
     ResponseResult changStatus(Integer status, Long id);
+
+    ResponseResult searchSales(Integer month);
 }
 

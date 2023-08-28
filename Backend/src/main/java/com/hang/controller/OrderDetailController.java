@@ -24,5 +24,9 @@ public class OrderDetailController{
     public ResponseResult insertOrderDetail(@RequestBody OrderDetailDto orderDetailDto){
         return orderDetailService.insertOrderDetail(orderDetailDto);
     }
+    @GetMapping("/searchOrders")
+    public ResponseResult searchOrders(@RequestParam("month")Integer month){
+        return orderDetailService.searchOrders(month);
+    }
 }
 

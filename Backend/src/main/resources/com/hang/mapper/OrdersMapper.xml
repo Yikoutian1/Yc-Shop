@@ -22,4 +22,21 @@
                  LEFT JOIN `address` a ON od.uid = a.id
         WHERE a.`default_address` = 1
     </select>
+    <select id="searchSales" resultType="com.hang.vo.OrderSalesVo">
+        SELECT DAY(pay_time) AS `day`,
+               SUM(total_price) AS `totalPrice`
+        FROM yc_shop.orders
+        WHERE MONTH(pay_time) = #{month}
+        GROUP BY DAY(pay_time)
+        ORDER BY DAY(pay_time);
+    </select>
+    <select id="searchOrders" resultType="com.hang.vo.OrdersDataVo">
+        SELECT DAY(pay_time) AS `day`, SUM(od.num) AS `num`
+        FROM yc_shop.orders o
+                 RIGHT JOIN `order_detail` od ON o.`oid` = od.oid
+        WHERE MONTH(o.pay_time) = #{month}
+        GROUP BY DAY(o.pay_time)
+        ORDER BY DAY(o.pay_time);
+    </select>
+
 </mapper>

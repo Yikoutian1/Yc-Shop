@@ -15,5 +15,7 @@ import com.hang.result.ResponseResult;
 public interface OrderDetailService extends IService<OrderDetail> {
 
     ResponseResult insertOrderDetail(OrderDetailDto orderDetailDto);
+
+    ResponseResult searchOrders(Integer month);
 }
 

@@ -195,7 +195,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         count = (Integer) redisTemplate.opsForValue().get(total);
         if (count == null) {
             count = baseMapper.selectMyCount(shopPageInfoVo.getCategorySelect());
-            redisTemplate.opsForValue().set(total, count, 1, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set(total, count, 12, TimeUnit.HOURS);
         }
 
         String shopPageInfo = "Shop:list_" + shopPageInfoVo.getPageNum() + "_" + shopPageInfoVo.getPageSize() + "_" + shopPageInfoVo.getCategorySelect();
@@ -215,8 +215,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             item.setImage(res);
             return item;
         }).collect(Collectors.toList());
-        // 设置半个小时的缓存
-        redisTemplate.opsForValue().set(shopPageInfo, shopExistTableVos, 1, TimeUnit.DAYS);
+        // 设置半天的缓存
+        redisTemplate.opsForValue().set(shopPageInfo, shopExistTableVos, 12, TimeUnit.HOURS);
         pageVo = new ShopPageVo(shopExistTableVos, count.longValue());
         return ResponseResult.okResult(pageVo);
     }

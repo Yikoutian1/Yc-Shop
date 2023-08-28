@@ -50,5 +50,10 @@ public class OrdersController {
                                       @RequestParam("id") Long id){
         return ordersService.changStatus(status,id);
     }
+    @GetMapping("/searchSales")
+    public ResponseResult searchSales(@RequestParam("month")Integer month){
+        return ordersService.searchSales(month);
+    }
+
 }
 
