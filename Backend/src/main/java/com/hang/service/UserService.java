@@ -17,5 +17,10 @@ public interface UserService extends IService<User> {
     ResponseResult addUser(UserDto userDto);
 
     ResponseResult sendMsg(String email);
+
+    ResponseResult queryUserWithPageInfo(Integer pageNum, Integer pageSize, String input);
+
+    ResponseResult handleUserStatus(Long id, Integer status);
+
 }
 

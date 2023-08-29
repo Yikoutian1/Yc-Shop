@@ -30,6 +30,8 @@ public class CommentVo {
     private Long rootId;
     //评论文字部分
     private String content;
+
+    private String avatar;
     //照片列表
     private String images;
 

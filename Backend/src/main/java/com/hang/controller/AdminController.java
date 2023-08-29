@@ -58,6 +58,16 @@ public class AdminController{
         request.getSession().removeAttribute("admin");
         return ResponseResult.okResult("退出成功");
     }
+
+    /**
+     * 清除缓存
+     * @return
+     */
+    @PostMapping("/clearCache")
+    public ResponseResult clearCache(){
+        return adminService.clearCache();
+    }
+
 }
 
 

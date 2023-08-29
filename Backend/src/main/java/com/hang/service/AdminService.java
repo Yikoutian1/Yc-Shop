@@ -16,5 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 public interface AdminService extends IService<Admin> {
 
     ResponseResult login(HttpServletRequest request, Admin admin);
+
+    ResponseResult clearCache();
 }
 

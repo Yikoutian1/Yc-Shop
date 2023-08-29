@@ -286,8 +286,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     }
 
     private void delShopAndCategoryAndTotal() {
-        String key1 = "Category";
-        String key2 = "CategoryTotal";
         String[] keys = new String[]{
                 "Category",
                 "CategoryTotal",

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hang.dto.CommentDto;
 import com.hang.emuns.StatusEnum;
 import com.hang.entity.Comment;
+import com.hang.entity.User;
 import com.hang.mapper.CommentMapper;
 import com.hang.mapper.ShopMapper;
 import com.hang.result.ResponseResult;
@@ -112,8 +113,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         // 通过creatBy查询用户昵称并赋值
         for (CommentVo vo : commentVos) {
             // getUid对应的用户id
-            String nikeName = userService.getById(vo.getUid()).getNickName();
-            vo.setNikeName(nikeName);
+            User user = userService.getById(vo.getUid());
+            vo.setAvatar(user.getImage());
+            vo.setNikeName(user.getNickName());
             // 通过toCommentUserId查询用户昵称并赋值
             // 如果toCommentId不为-1 才进行查询
             if (vo.getUid() != -1) {
