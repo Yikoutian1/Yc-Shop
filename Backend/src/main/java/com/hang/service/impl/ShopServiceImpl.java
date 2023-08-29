@@ -269,10 +269,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     public ResponseResult searchByName(String name) {
         LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(name != null, Shop::getName, name);
-        Page<Shop> page = new Page<>();
-        page(page, queryWrapper);
-        List<Shop> shopList = page.getRecords();
-        shopList.stream().map(item -> {
+        List<Shop> shops = baseMapper.selectList(queryWrapper);
+        Integer count = baseMapper.selectCount(queryWrapper);
+        shops.stream().map(item -> {
             String[] split = item.getImage().split(",");
             for (int i = 0; i < split.length; i++) {
                 split[i] = BaseImageUrl + split[i];
@@ -281,8 +280,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             item.setImage(res);
             return item;
         }).collect(Collectors.toList());
-        List<ShopExistTableVo> shopExistTableVo = categoryService.getCategoryNameList(shopList);
-        return ResponseResult.okResult(new PageVo(shopExistTableVo, page.getTotal()));
+        List<ShopExistTableVo> shopExistTableVo = categoryService.getCategoryNameList(shops);
+        return ResponseResult.okResult(new PageVo(shopExistTableVo, count.longValue()));
     }
 
     private void delShopAndCategoryAndTotal() {
