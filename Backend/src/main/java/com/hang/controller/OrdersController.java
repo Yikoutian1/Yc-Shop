@@ -54,6 +54,9 @@ public class OrdersController {
     public ResponseResult searchSales(@RequestParam("month")Integer month){
         return ordersService.searchSales(month);
     }
-
+    @GetMapping("/circleEcharts")
+    public ResponseResult circleEcharts(){
+        return ordersService.circleEcharts();
+    }
 }
 

@@ -3,6 +3,9 @@ package com.hang.entity;
 import java.util.Date;
 
 import java.io.Serializable;
+
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,6 +39,7 @@ public class Comment  {
     //照片列表
     private String images;
     //评论时间
+    @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
 

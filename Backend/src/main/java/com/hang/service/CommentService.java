@@ -1,6 +1,7 @@
 package com.hang.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hang.dto.CommentDto;
 import com.hang.entity.Comment;
 import com.hang.result.ResponseResult;
 import org.apache.ibatis.annotations.Param;
@@ -15,5 +16,7 @@ import org.apache.ibatis.annotations.Param;
 public interface CommentService extends IService<Comment> {
 
     ResponseResult queryCommentList(@Param("pageNum") Integer pageNum,@Param("pageSize") Integer pageSize,@Param("shopId") Long shopId);
+
+    ResponseResult addComment(CommentDto commentDto);
 }
 

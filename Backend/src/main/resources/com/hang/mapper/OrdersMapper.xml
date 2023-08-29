@@ -38,5 +38,12 @@
         GROUP BY DAY(o.pay_time)
         ORDER BY DAY(o.pay_time);
     </select>
+    <select id="circleEcharts" resultType="com.hang.vo.CircleEchartsVo">
+        SELECT c.`name` `name`, SUM(s.`sales`) `value`
+        FROM `category` c
+                 LEFT JOIN `shop_category` sc ON sc.`category_id` = c.`id`
+                 LEFT JOIN `shop` s ON s.`id` = sc.`shop_id`
+        GROUP BY c.`name`
+    </select>
 
 </mapper>

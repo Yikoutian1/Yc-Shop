@@ -8,6 +8,7 @@ import com.hang.mapper.OrdersMapper;
 import com.hang.result.ResponseResult;
 import com.hang.service.OrdersService;
 import com.hang.utils.RedisCache;
+import com.hang.vo.CircleEchartsVo;
 import com.hang.vo.OrderDetailVo;
 import com.hang.vo.OrderSalesVo;
 import com.hang.vo.PageVo;
@@ -98,6 +99,21 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         redisCache.setCacheList(searchSales,vo);
         redisCache.expire(searchSales,12, TimeUnit.HOURS);
         return ResponseResult.okResult(vo);
+    }
+
+    @Override
+    public ResponseResult circleEcharts() {
+        List<CircleEchartsVo> vos = null;
+        String circleEcharts = "Draw:circleEcharts";
+        vos = redisCache.getCacheList(circleEcharts);
+        if(vos.size()!=0){
+            return ResponseResult.okResult(vos);
+        }
+        vos = ordersMapper.circleEcharts();
+        redisCache.setCacheList(circleEcharts,vos);
+        // 设置30分钟缓存
+        redisCache.expire(circleEcharts,30,TimeUnit.MINUTES);
+        return ResponseResult.okResult(vos);
     }
 
     private static int getDaysInMonth(int year, int month) {

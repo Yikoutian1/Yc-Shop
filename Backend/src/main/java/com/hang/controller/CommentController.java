@@ -2,6 +2,7 @@ package com.hang.controller;
 
 
 
+import com.hang.dto.CommentDto;
 import com.hang.result.ResponseResult;
 import com.hang.service.CommentService;
 import io.swagger.models.auth.In;
@@ -34,6 +35,10 @@ public class CommentController{
     @GetMapping("/queryCommentList")
     public ResponseResult queryCommentList(@RequestParam("pageNum") Integer pageNum,@RequestParam("pageSize")Integer pageSize,@RequestParam("shopId")Long shopId){
         return commentService.queryCommentList(pageNum,pageSize,shopId);
+    }
+    @PostMapping("/confirmToComment")
+    public ResponseResult confirmToComment(@RequestBody CommentDto commentDto){
+        return commentService.addComment(commentDto);
     }
 }
 

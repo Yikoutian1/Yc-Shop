@@ -2,6 +2,7 @@ package com.hang.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hang.entity.Orders;
+import com.hang.vo.CircleEchartsVo;
 import com.hang.vo.OrderDetailVo;
 import com.hang.vo.OrderSalesVo;
 import com.hang.vo.OrdersDataVo;
@@ -27,5 +28,7 @@ public interface OrdersMapper extends BaseMapper<Orders> {
     List<OrderSalesVo> searchSales(@Param("month") Integer month);
 
     List<OrdersDataVo> searchOrders(@Param("month") Integer month);
+
+    List<CircleEchartsVo> circleEcharts();
 }
 

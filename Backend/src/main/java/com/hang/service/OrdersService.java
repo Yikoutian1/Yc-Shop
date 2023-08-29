@@ -22,5 +22,7 @@ public interface OrdersService extends IService<Orders> {
     ResponseResult changStatus(Integer status, Long id);
 
     ResponseResult searchSales(Integer month);
+
+    ResponseResult circleEcharts();
 }
 

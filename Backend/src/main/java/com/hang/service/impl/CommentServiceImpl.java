@@ -3,6 +3,7 @@ package com.hang.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hang.dto.CommentDto;
 import com.hang.emuns.StatusEnum;
 import com.hang.entity.Comment;
 import com.hang.mapper.CommentMapper;
@@ -11,13 +12,16 @@ import com.hang.result.ResponseResult;
 import com.hang.service.CommentService;
 import com.hang.service.UserService;
 import com.hang.utils.BeanCopyUtils;
+import com.hang.utils.RedisCache;
 import com.hang.vo.CommentVo;
 import com.hang.vo.PageVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @since 2023-08-24 17:02:26
  */
 @Service("commentService")
+@Slf4j
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
     private final static String BaseImageUrl = "http://rzl9bicnx.hn-bkt.clouddn.com/";
     @Autowired
@@ -36,6 +41,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private RedisTemplate redisTemplate;
     @Autowired
     private ShopMapper shopMapper;
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public ResponseResult queryCommentList(Integer pageNum, Integer pageSize, Long shopId) {
@@ -79,6 +86,18 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         }
         redisTemplate.opsForValue().set(shopCommentList, commentVoList, 1, TimeUnit.DAYS);
         return ResponseResult.okResult(new PageVo(commentVoList, page.getTotal()));
+    }
+
+    @Override
+    public ResponseResult addComment(CommentDto commentDto) {
+        String content = commentDto.getContent();
+        CommentVo commentInfo = commentDto.getCommentInfo();
+        Boolean flag = baseMapper.addComment(content,commentInfo);
+        if(flag){
+            delKey("Comment");
+        }
+
+        return flag ? ResponseResult.okResult() : ResponseResult.errorResult(202,"回复失败");
     }
 
     /**
@@ -134,6 +153,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             item.setImagess(imagess);
         });
         return commentVos;
+    }
+    private void delKey(String key) {
+        log.info("Redis Key(key:{}) 开始删除", key);
+        Collection<String> keys = redisCache.keys("*");
+        keys.forEach(item -> {
+            if (item.contains(key)) {
+                redisCache.deleteObject(item);
+            }
+        });
+        log.info("key:{} 删除成功", key);
     }
 }
 
